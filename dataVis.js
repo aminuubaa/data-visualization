@@ -58,6 +58,8 @@ function initVis(parseData) {
     dimensions = Object.keys(parseData[0]);
     dimensions.splice(0, 1);
 
+    console.log("dimenstion of the data set are ",dimensions)
+
     let y = d3.scaleLinear()
         .domain(d3.extent(parseData, d => +d[dimensions[0]]))
         .range([height - margin.bottom - margin.top, margin.top]);
@@ -71,22 +73,39 @@ function initVis(parseData) {
         .attr("transform", "translate(" + margin.left + ")")
         .call(d3.axisLeft(y));
 
-    yAxisLabel = yAxis.append("text")
-        .style("text-anchor", "middle")
-        .attr("y", -10)
-        .attr("x", -margin.left / 2)
-        .text(dimensions[0]);
+    // yAxisLabel = yAxis.append("text")
+    //     .style("text-anchor", "middle")
+    //     .attr("y", -10)
+    //     .attr("x", -margin.left / 2)
+    //     .text(dimensions[0]);
 
     xAxis = scatter.append("g")
         .attr("class", "axis")
         .attr("transform", "translate(0, " + (height - margin.bottom) + ")")
         .call(d3.axisBottom(x));
 
+    // xAxisLabel = xAxis.append("text")
+    //     .style("text-anchor", "middle")
+    //     .attr("x", width / 2)
+    //     .attr("y", margin.bottom - 10)
+    //     .text(dimensions[1]);
+
+    yAxisLabel = yAxis.append("text")
+    .attr("class", "axisLabel")
+    .style("text-anchor", "middle")
+    .attr("y",-30)
+    .attr("x", - 40)
+    .attr("transform", "rotate(-90)")
+    .text(dimensions[0]);
+
     xAxisLabel = xAxis.append("text")
-        .style("text-anchor", "middle")
-        .attr("x", width / 2)
-        .attr("y", margin.bottom - 10)
-        .text(dimensions[1]);
+    .attr("class", "axisLabel")
+    .style("text-anchor", "middle")
+    .attr("x", width / 2)
+    .attr("y",  margin.bottom-10) 
+    .text(dimensions[1]);
+
+
 
     radarAxesAngle = Math.PI * 2 / dimensions.length;
 
@@ -114,20 +133,23 @@ function initVis(parseData) {
     renderSpiderLines();
     
     channels.forEach(c => initMenu(c, dimensions));
-    channels.forEach(c => refreshMenu(c));
+    channels.forEach(c => refreshMenu(c,dimensions));
 
     CreateDataTable(parseData);
     renderScatterplot(parseData);
 }
 
 function clear() {
+
     scatter.selectAll("*").remove();
     radar.selectAll("*").remove();
     dataTable.selectAll("*").remove();
+
 }
 
 function CreateDataTable(parseData) {
-    let table = dataTable.append("table").attr("class", "dataTable");
+    let table = dataTable.append("table").attr("class", "dataTable").datum(parseData);
+ 
     let thead = table.append("thead");
     let tbody = table.append("tbody");
 
@@ -143,11 +165,17 @@ function CreateDataTable(parseData) {
     }).on("mouseout", function () {
         d3.select(this).style("background-color", "transparent");
     });
+
+    console.log("datatable values is ", table.datum());
 }
 
 function renderScatterplot(parseData) {
+
+    console.log(parseData)
+
     let xDomain = readMenu("scatterX");
     let yDomain = readMenu("scatterY");
+
     xAxisLabel.text(xDomain);
     yAxisLabel.text(yDomain);
 
@@ -156,10 +184,32 @@ function renderScatterplot(parseData) {
         .range([height - margin.bottom, margin.top]);
     yAxis.transition().duration(1000).call(d3.axisLeft(y));
 
+
     let x = d3.scaleLinear()
         .domain(d3.extent(parseData, d => +d[xDomain]))
         .range([margin.left, width - margin.right]);
+
     xAxis.transition().duration(1000).call(d3.axisBottom(x));
+    
+    scatter.selectAll(".axisLabel").remove();
+
+    xAxis.selectAll(".axisLabel").remove();
+
+    yAxisLabel = yAxis.append("text")
+    .attr("class", "axisLabel")
+    .style("text-anchor", "middle")
+    .attr("y",-30)
+    .attr("x", - 40)
+    .attr("transform", "rotate(-90)")
+    .text(yDomain);
+
+    xAxisLabel = xAxis.append("text")
+    .attr("class", "axisLabel")
+    .style("text-anchor", "middle")
+    .attr("x", width / 2)
+    .attr("y",  margin.bottom-10) 
+    .text(xDomain);
+
 
     scatter.selectAll(".dot").remove();
     scatter.selectAll(".dot")
@@ -170,7 +220,7 @@ function renderScatterplot(parseData) {
         .attr("cx", d => x(d[xDomain]))
         .attr("cy", d => y(d[yDomain]))
         .attr("r", 5)
-        .style("fill", "steelblue");
+        .style("fill", d => colorScale(d.species));
 
     scatter.selectAll(".dot").on("click", function (event, d) {
         d3.select(this).style("fill", "red");
@@ -179,6 +229,7 @@ function renderScatterplot(parseData) {
 }
 
 function renderRadarChart(selectedData) {
+
     radar.selectAll(".radarLine").remove();
 
     let r = d3.scaleLinear()
@@ -257,13 +308,14 @@ function radarAngle(index) {
 }
 
 function initMenu(id, entries) {
+    console.log("i am acalled here")
     $("select#" + id).empty();
     entries.forEach(d => {
         $("select#" + id).append("<option>" + d + "</option>");
     });
     $("#" + id).selectmenu({
         select: function () {
-            let parseData = d3.select("#dataTable").datum(); // Get the parsed data from the data table
+            let parseData = d3.select(".dataTable").datum(); // Get the parsed data from the data table
             renderScatterplot(parseData);
         }
     });
@@ -280,6 +332,7 @@ function readMenu(id) {
 initMenu("scatterX", dimensions);
 initMenu("scatterY", dimensions);
 initMenu("size", dimensions);
+
 refreshMenu("scatterX");
 refreshMenu("scatterY");
 refreshMenu("size");
