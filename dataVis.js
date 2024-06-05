@@ -19,6 +19,7 @@ let scatter, radar, dataTable;
 let colorScale=["green","blue","yellow"];
 let selectedPoints = {}; 
 let maxSelectedPoints = 5;
+let nextId = 0;
 
 function init() {
     margin = { top: 20, right: 20, bottom: 20, left: 50 };
@@ -228,7 +229,7 @@ function renderScatterplot(parseData) {
         .attr("cx", d => x(d[xDomain]))
         .attr("cy", d => y(d[yDomain]))
         .attr("r", d => sizeScale(d[sizeDomain]))
-   
+        .attr("data-id", d => nextId++)
         .style("fill", d => colorScale(d.species))
         .style("opacity", 0.7);
 
@@ -236,8 +237,8 @@ function renderScatterplot(parseData) {
        let color = d3.rgb(Math.random() * 255, Math.random() * 255, Math.random() * 255);
        d3.select(this).style("fill", color);
        //d3.select(this).classed("selected", !d3.select(this).classed("selected"));
-
-        updateRadarChart(d,color);
+       let pointId = d3.select(this).attr("data-id");
+        updateRadarChart(d,color,pointId);
     });
 }
 
@@ -292,32 +293,86 @@ function renderSpiderLines() {
     }
 }
 
-function updateRadarChart(selectedData,color) {
+function updateRadarChart(selectedData,color,pointId) {
     
     scatter.selectAll(".dot.selected") 
         .style("fill", color);
-    if (Object.keys(selectedPoints).length < 5) {
-        let pointId = `point_${Object.keys(selectedPoints).length + 1}`;
+
+    // if (Object.keys(selectedPoints).length < 5) {
+    //     let pointId = `point_${Object.keys(selectedPoints).length + 1}`;
+    //     selectedPoints[pointId] = { color: color, data: selectedData };
+    // } else {
+    //     alert("Maximum selected points limit reached.");
+    // }
+
+    if (!selectedPoints[pointId] && Object.keys(selectedPoints).length < 5) {
         selectedPoints[pointId] = { color: color, data: selectedData };
-    } else {
+    } else if (!selectedPoints[pointId]) {
         alert("Maximum selected points limit reached.");
+        return;
     }
+
     //renderScatterplot(parseData);
     renderRadarChart(selectedData);
     updateLegend(selectedData);
 }
 
 function updateLegend(selectedData) {
+    // let legend = d3.select("#legend");
+    // legend.selectAll("div").remove(); 
+    // console.log("selectedPoints", selectedPoints);
+    // Object.keys(selectedPoints).forEach((pointData, index) => {
+    //     let data = selectedPoints[pointData].data;
+    //     let color = selectedPoints[pointData].color;
+    //     let legendItem = legend.append("div")
+    //         .attr("class", "legendItem")
+    //         .style("color", color)
+    //         .text(`Point ${index + 1}: ${data.Name}`);
+    //     // Add click event listener to legend item
+    //     legendItem.on("click", () => {
+    //         // Remove selected point from selectedPoints object
+    //         delete selectedPoints[pointData];
+    //         // Update radar chart and legend
+    //         renderRadarChart(selectedData);
+    //         updateLegend(selectedData);
+    //         // Update scatter plot
+    //         scatter.selectAll(".dot")
+    //             .filter(d => d === selectedData)
+    //             .style("fill", null); // Remove fill color
+    //     });
+    // });
+
+
     let legend = d3.select("#legend");
-    legend.selectAll("div").remove(); 
-    console.log("selectedPOints",selectedPoints)
-    Object.keys(selectedPoints).forEach((pointData, index) => {
-        let data = selectedPoints[pointData].data; 
-        legend.append("div")
+    legend.selectAll("div").remove();
+
+    Object.keys(selectedPoints).forEach((pointId, index) => {
+        let pointData = selectedPoints[pointId].data;
+        let originalColor = selectedPoints[pointId].color;
+        let legendItem = legend.append("div")
             .attr("class", "legendItem")
-            .style("color", selectedPoints[pointData].color)
-            .text(`Point ${index+1}: ${data.Name}`);
+            .style("color", originalColor);
+
+        legendItem.append("span")
+            .attr("class", "legendText")
+            .text(`Point ${index + 1}: ${pointData.Name} `);
+
+        legendItem.append("span")
+            .attr("class", "legendRemove")
+            .style("cursor", "pointer")
+            .text("[x]")
+            .on("click", function() {
+          
+                delete selectedPoints[pointId];
+                //renderRadarChart(null);
+                updateLegend();
+              
+                scatter.selectAll(".dot")
+                    .filter(function() { return d3.select(this).attr("data-id") == pointId; })
+                    .style("fill", d => colorScale(d.category)); 
+            });
     });
+
 }
 
 function radarX(radius, index) {
