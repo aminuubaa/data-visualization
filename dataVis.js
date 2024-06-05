@@ -16,7 +16,7 @@ let dimensions = ["dimension 1", "dimension 2", "dimension 3", "dimension 4", "d
 let channels = ["scatterX", "scatterY", "size"];
 let margin, width, height, radius;
 let scatter, radar, dataTable;
-let colorScale;
+let colorScale=["green","blue","yellow"];
 
 function init() {
     margin = { top: 20, right: 20, bottom: 20, left: 50 };
@@ -171,10 +171,10 @@ function CreateDataTable(parseData) {
 
 function renderScatterplot(parseData) {
 
-    console.log(parseData)
 
     let xDomain = readMenu("scatterX");
     let yDomain = readMenu("scatterY");
+    let sizeDomain = readMenu("size");
 
     xAxisLabel.text(xDomain);
     yAxisLabel.text(yDomain);
@@ -188,6 +188,10 @@ function renderScatterplot(parseData) {
     let x = d3.scaleLinear()
         .domain(d3.extent(parseData, d => +d[xDomain]))
         .range([margin.left, width - margin.right]);
+
+    let sizeScale = d3.scaleLinear()
+        .domain(d3.extent(parseData, d => +d[sizeDomain]))
+        .range([3, 10]);
 
     xAxis.transition().duration(1000).call(d3.axisBottom(x));
     
@@ -219,8 +223,10 @@ function renderScatterplot(parseData) {
         .attr("class", "dot")
         .attr("cx", d => x(d[xDomain]))
         .attr("cy", d => y(d[yDomain]))
-        .attr("r", 5)
-        .style("fill", d => colorScale(d.species));
+        .attr("r", d => sizeScale(d[sizeDomain]))
+   
+        .style("fill", d => colorScale(d.species))
+        .style("opacity", 0.7);
 
     scatter.selectAll(".dot").on("click", function (event, d) {
         d3.select(this).style("fill", "red");
