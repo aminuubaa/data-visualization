@@ -17,6 +17,8 @@ let channels = ["scatterX", "scatterY", "size"];
 let margin, width, height, radius;
 let scatter, radar, dataTable;
 let colorScale=["green","blue","yellow"];
+let selectedPoints = {}; 
+let maxSelectedPoints = 5;
 
 function init() {
     margin = { top: 20, right: 20, bottom: 20, left: 50 };
@@ -147,6 +149,8 @@ function clear() {
 
 }
 
+
+
 function CreateDataTable(parseData) {
     let table = dataTable.append("table").attr("class", "dataTable").datum(parseData);
  
@@ -229,8 +233,11 @@ function renderScatterplot(parseData) {
         .style("opacity", 0.7);
 
     scatter.selectAll(".dot").on("click", function (event, d) {
-        d3.select(this).style("fill", "red");
-        updateRadarChart(d);
+       let color = d3.rgb(Math.random() * 255, Math.random() * 255, Math.random() * 255);
+       d3.select(this).style("fill", color);
+       //d3.select(this).classed("selected", !d3.select(this).classed("selected"));
+
+        updateRadarChart(d,color);
     });
 }
 
@@ -249,7 +256,7 @@ function renderRadarChart(selectedData) {
 
     let radarData = dimensions.map(key => ({
         key: key,
-        value: +selectedData[key] / d3.max(dimensions.map(d => +selectedData[d])) // Normalize values between 0 and 1
+        value: +selectedData[key] / d3.max(dimensions.map(d => +selectedData[d])) 
     }));
 
     radar.append("path")
@@ -285,19 +292,31 @@ function renderSpiderLines() {
     }
 }
 
-function updateRadarChart(selectedData) {
+function updateRadarChart(selectedData,color) {
+    
+    scatter.selectAll(".dot.selected") 
+        .style("fill", color);
+    if (Object.keys(selectedPoints).length < 5) {
+        let pointId = `point_${Object.keys(selectedPoints).length + 1}`;
+        selectedPoints[pointId] = { color: color, data: selectedData };
+    } else {
+        alert("Maximum selected points limit reached.");
+    }
+    //renderScatterplot(parseData);
     renderRadarChart(selectedData);
+    updateLegend(selectedData);
 }
 
 function updateLegend(selectedData) {
     let legend = d3.select("#legend");
-    legend.selectAll("div").remove();
-
-    dimensions.forEach(dim => {
+    legend.selectAll("div").remove(); 
+    console.log("selectedPOints",selectedPoints)
+    Object.keys(selectedPoints).forEach((pointData, index) => {
+        let data = selectedPoints[pointData].data; 
         legend.append("div")
             .attr("class", "legendItem")
-            .style("color", colorScale(dim))
-            .text(`${dim}: ${selectedData[dim]}`);
+            .style("color", selectedPoints[pointData].color)
+            .text(`Point ${index+1}: ${data.Name}`);
     });
 }
 
@@ -321,7 +340,7 @@ function initMenu(id, entries) {
     });
     $("#" + id).selectmenu({
         select: function () {
-            let parseData = d3.select(".dataTable").datum(); // Get the parsed data from the data table
+            let parseData = d3.select(".dataTable").datum(); 
             renderScatterplot(parseData);
         }
     });
