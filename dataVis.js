@@ -50,7 +50,7 @@ function init() {
             let parseData = d3.csvParse(reader.result);
             initVis(parseData);
             CreateDataTable(parseData);
-            initDashboard(null);
+            initDashboard(parseData);
         };
         reader.readAsBinaryString(fileInput.files[0]);
     };
