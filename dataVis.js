@@ -173,10 +173,7 @@ function CreateDataTable(parseData) {
 
     console.log("datatable values is ", table.datum());
 }
-
 function renderScatterplot(parseData) {
-
-
     let xDomain = readMenu("scatterX");
     let yDomain = readMenu("scatterY");
     let sizeDomain = readMenu("size");
@@ -187,8 +184,6 @@ function renderScatterplot(parseData) {
     let y = d3.scaleLinear()
         .domain(d3.extent(parseData, d => +d[yDomain]))
         .range([height - margin.bottom, margin.top]);
-    yAxis.transition().duration(1000).call(d3.axisLeft(y));
-
 
     let x = d3.scaleLinear()
         .domain(d3.extent(parseData, d => +d[xDomain]))
@@ -199,28 +194,10 @@ function renderScatterplot(parseData) {
         .range([3, 10]);
 
     xAxis.transition().duration(1000).call(d3.axisBottom(x));
-    
-    scatter.selectAll(".axisLabel").remove();
-
-    xAxis.selectAll(".axisLabel").remove();
-
-    yAxisLabel = yAxis.append("text")
-    .attr("class", "axisLabel")
-    .style("text-anchor", "middle")
-    .attr("y",-30)
-    .attr("x", - 40)
-    .attr("transform", "rotate(-90)")
-    .text(yDomain);
-
-    xAxisLabel = xAxis.append("text")
-    .attr("class", "axisLabel")
-    .style("text-anchor", "middle")
-    .attr("x", width / 2)
-    .attr("y",  margin.bottom-10) 
-    .text(xDomain);
-
+    yAxis.transition().duration(1000).call(d3.axisLeft(y));
 
     scatter.selectAll(".dot").remove();
+    
     scatter.selectAll(".dot")
         .data(parseData)
         .enter()
@@ -231,16 +208,91 @@ function renderScatterplot(parseData) {
         .attr("r", d => sizeScale(d[sizeDomain]))
         .attr("data-id", d => nextId++)
         .style("fill", d => colorScale(d.species))
-        .style("opacity", 0.7);
-
-    scatter.selectAll(".dot").on("click", function (event, d) {
-       let color = d3.rgb(Math.random() * 255, Math.random() * 255, Math.random() * 255);
-       d3.select(this).style("fill", color);
-       //d3.select(this).classed("selected", !d3.select(this).classed("selected"));
-       let pointId = d3.select(this).attr("data-id");
-        updateRadarChart(d,color,pointId);
-    });
+        .style("opacity", 0.7)
+        .on("click", function (event, d) {
+            let pointId = d3.select(this).attr("data-id");
+            if (selectedPoints[pointId]) {
+                delete selectedPoints[pointId];
+                d3.select(this).style("fill", colorScale(d.species));
+            } else if (Object.keys(selectedPoints).length < maxSelectedPoints) {
+                let color = d3.rgb(Math.random() * 255, Math.random() * 255, Math.random() * 255);
+                selectedPoints[pointId] = { color: color, data: d };
+                d3.select(this).style("fill", color);
+            } else {
+                alert("Maximum selected points limit reached.");
+            }
+            updateRadarChart();
+        });
 }
+
+
+// function renderScatterplot(parseData) {
+
+
+//     let xDomain = readMenu("scatterX");
+//     let yDomain = readMenu("scatterY");
+//     let sizeDomain = readMenu("size");
+
+//     xAxisLabel.text(xDomain);
+//     yAxisLabel.text(yDomain);
+
+//     let y = d3.scaleLinear()
+//         .domain(d3.extent(parseData, d => +d[yDomain]))
+//         .range([height - margin.bottom, margin.top]);
+//     yAxis.transition().duration(1000).call(d3.axisLeft(y));
+
+
+//     let x = d3.scaleLinear()
+//         .domain(d3.extent(parseData, d => +d[xDomain]))
+//         .range([margin.left, width - margin.right]);
+
+//     let sizeScale = d3.scaleLinear()
+//         .domain(d3.extent(parseData, d => +d[sizeDomain]))
+//         .range([3, 10]);
+
+//     xAxis.transition().duration(1000).call(d3.axisBottom(x));
+    
+//     scatter.selectAll(".axisLabel").remove();
+
+//     xAxis.selectAll(".axisLabel").remove();
+
+//     yAxisLabel = yAxis.append("text")
+//     .attr("class", "axisLabel")
+//     .style("text-anchor", "middle")
+//     .attr("y",-30)
+//     .attr("x", - 40)
+//     .attr("transform", "rotate(-90)")
+//     .text(yDomain);
+
+//     xAxisLabel = xAxis.append("text")
+//     .attr("class", "axisLabel")
+//     .style("text-anchor", "middle")
+//     .attr("x", width / 2)
+//     .attr("y",  margin.bottom-10) 
+//     .text(xDomain);
+
+
+//     scatter.selectAll(".dot").remove();
+//     scatter.selectAll(".dot")
+//         .data(parseData)
+//         .enter()
+//         .append("circle")
+//         .attr("class", "dot")
+//         .attr("cx", d => x(d[xDomain]))
+//         .attr("cy", d => y(d[yDomain]))
+//         .attr("r", d => sizeScale(d[sizeDomain]))
+//         .attr("data-id", d => nextId++)
+//         .style("fill", d => colorScale(d.species))
+//         .style("opacity", 0.7);
+
+//     scatter.selectAll(".dot").on("click", function (event, d) {
+//        let color = d3.rgb(Math.random() * 255, Math.random() * 255, Math.random() * 255);
+//        d3.select(this).style("fill", color);
+//        //d3.select(this).classed("selected", !d3.select(this).classed("selected"));
+//        let pointId = d3.select(this).attr("data-id");
+//         updateRadarChart(d,color,pointId);
+//     });
+// }
 
 function renderRadarChart(selectedData) {
 
@@ -293,56 +345,69 @@ function renderSpiderLines() {
     }
 }
 
-function updateRadarChart(selectedData,color,pointId) {
-    
-    scatter.selectAll(".dot.selected") 
-        .style("fill", color);
 
-    // if (Object.keys(selectedPoints).length < 5) {
-    //     let pointId = `point_${Object.keys(selectedPoints).length + 1}`;
-    //     selectedPoints[pointId] = { color: color, data: selectedData };
-    // } else {
-    //     alert("Maximum selected points limit reached.");
-    // }
+function updateRadarChart() {
+    radar.selectAll(".radarLine").remove();
 
-    if (!selectedPoints[pointId] && Object.keys(selectedPoints).length < 5) {
-        selectedPoints[pointId] = { color: color, data: selectedData };
-    } else if (!selectedPoints[pointId]) {
-        alert("Maximum selected points limit reached.");
-        return;
-    }
+    let r = d3.scaleLinear()
+        .domain([0, 1])
+        .range([0, radius]);
 
-    //renderScatterplot(parseData);
-    renderRadarChart(selectedData);
-    updateLegend(selectedData);
+    let radarLine = d3.lineRadial()
+        .radius(d => r(d.value))
+        .angle((d, i) => radarAngle(i))
+        .curve(d3.curveLinearClosed);
+
+    Object.keys(selectedPoints).forEach(pointId => {
+        let pointData = selectedPoints[pointId].data;
+        let radarData = dimensions.map(key => ({
+            key: key,
+            value: +pointData[key] / d3.max(dimensions.map(d => +pointData[d]))
+        }));
+
+        radar.append("path")
+            .datum(radarData)
+            .attr("class", "radarLine")
+            .attr("d", radarLine)
+            .style("fill", "none")
+            .style("stroke", selectedPoints[pointId].color)
+            .style("stroke-width", 3)
+            .style("opacity", 1);
+    });
+
+    updateLegend();
 }
 
-function updateLegend(selectedData) {
-    // let legend = d3.select("#legend");
-    // legend.selectAll("div").remove(); 
-    // console.log("selectedPoints", selectedPoints);
-    // Object.keys(selectedPoints).forEach((pointData, index) => {
-    //     let data = selectedPoints[pointData].data;
-    //     let color = selectedPoints[pointData].color;
-    //     let legendItem = legend.append("div")
-    //         .attr("class", "legendItem")
-    //         .style("color", color)
-    //         .text(`Point ${index + 1}: ${data.Name}`);
-    //     // Add click event listener to legend item
-    //     legendItem.on("click", () => {
-    //         // Remove selected point from selectedPoints object
-    //         delete selectedPoints[pointData];
-    //         // Update radar chart and legend
-    //         renderRadarChart(selectedData);
-    //         updateLegend(selectedData);
-    //         // Update scatter plot
-    //         scatter.selectAll(".dot")
-    //             .filter(d => d === selectedData)
-    //             .style("fill", null); // Remove fill color
-    //     });
-    // });
+function radarAngle(index) {
+    return radarAxesAngle * index - Math.PI / 2;
+}
 
 
+// function updateRadarChart(selectedData,color,pointId) {
+    
+//     scatter.selectAll(".dot.selected") 
+//         .style("fill", color);
+
+//     // if (Object.keys(selectedPoints).length < 5) {
+//     //     let pointId = `point_${Object.keys(selectedPoints).length + 1}`;
+//     //     selectedPoints[pointId] = { color: color, data: selectedData };
+//     // } else {
+//     //     alert("Maximum selected points limit reached.");
+//     // }
+
+//     if (!selectedPoints[pointId] && Object.keys(selectedPoints).length < 5) {
+//         selectedPoints[pointId] = { color: color, data: selectedData };
+//     } else if (!selectedPoints[pointId]) {
+//         alert("Maximum selected points limit reached.");
+//         return;
+//     }
+
+//     //renderScatterplot(parseData);
+//     renderRadarChart(selectedData);
+//     updateLegend(selectedData);
+// }
+
+function updateLegend() {
     let legend = d3.select("#legend");
     legend.selectAll("div").remove();
 
@@ -355,25 +420,79 @@ function updateLegend(selectedData) {
 
         legendItem.append("span")
             .attr("class", "legendText")
-            .text(`Point ${index + 1}: ${pointData.Name} `);
+            .text(`Point ${index + 1}: ${pointData.Name}`);
 
         legendItem.append("span")
             .attr("class", "legendRemove")
             .style("cursor", "pointer")
             .text("[x]")
             .on("click", function() {
-          
                 delete selectedPoints[pointId];
-                //renderRadarChart(null);
-                updateLegend();
-              
+                updateRadarChart();
                 scatter.selectAll(".dot")
                     .filter(function() { return d3.select(this).attr("data-id") == pointId; })
-                    .style("fill", d => colorScale(d.category)); 
+                    .style("fill", d => colorScale(d.species));
             });
     });
-
 }
+
+// function updateLegend(selectedData) {
+//     // let legend = d3.select("#legend");
+//     // legend.selectAll("div").remove(); 
+//     // console.log("selectedPoints", selectedPoints);
+//     // Object.keys(selectedPoints).forEach((pointData, index) => {
+//     //     let data = selectedPoints[pointData].data;
+//     //     let color = selectedPoints[pointData].color;
+//     //     let legendItem = legend.append("div")
+//     //         .attr("class", "legendItem")
+//     //         .style("color", color)
+//     //         .text(`Point ${index + 1}: ${data.Name}`);
+//     //     // Add click event listener to legend item
+//     //     legendItem.on("click", () => {
+//     //         // Remove selected point from selectedPoints object
+//     //         delete selectedPoints[pointData];
+//     //         // Update radar chart and legend
+//     //         renderRadarChart(selectedData);
+//     //         updateLegend(selectedData);
+//     //         // Update scatter plot
+//     //         scatter.selectAll(".dot")
+//     //             .filter(d => d === selectedData)
+//     //             .style("fill", null); // Remove fill color
+//     //     });
+//     // });
+
+
+//     let legend = d3.select("#legend");
+//     legend.selectAll("div").remove();
+
+//     Object.keys(selectedPoints).forEach((pointId, index) => {
+//         let pointData = selectedPoints[pointId].data;
+//         let originalColor = selectedPoints[pointId].color;
+//         let legendItem = legend.append("div")
+//             .attr("class", "legendItem")
+//             .style("color", originalColor);
+
+//         legendItem.append("span")
+//             .attr("class", "legendText")
+//             .text(`Point ${index + 1}: ${pointData.Name} `);
+
+//         legendItem.append("span")
+//             .attr("class", "legendRemove")
+//             .style("cursor", "pointer")
+//             .text("[x]")
+//             .on("click", function() {
+          
+//                 delete selectedPoints[pointId];
+//                 //renderRadarChart(null);
+//                 updateLegend();
+              
+//                 scatter.selectAll(".dot")
+//                     .filter(function() { return d3.select(this).attr("data-id") == pointId; })
+//                     .style("fill", d => colorScale(d.category)); 
+//             });
+//     });
+
+// }
 
 function radarX(radius, index) {
     return radius * Math.cos(radarAngle(index));

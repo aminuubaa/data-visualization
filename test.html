@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Map Chart with D3.js</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://d3js.org/topojson.v3.min.js"></script>
+    <style>
+        .map path {
+            stroke: #ffffff;
+            stroke-width: 0.5;
+        }
+        .map .country {
+            fill: #cccccc;
+        }
+        .map .selected {
+            fill: #ff0000;
+        }
+        .bubble {
+            fill: #69b3a2;
+            opacity: 0.6;
+            stroke: #000000;
+            stroke-width: 1px;
+        }
+        .legend {
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <svg width="960" height="600" class="map"></svg>
+    <script src="map.js"></script>
+</body>
+</html>
