@@ -16,6 +16,8 @@
 let chart1, chart2, chart3, chart4;
 
 function initDashboard(parseData) {
+    width=800
+    height=600
     chart1 = d3.select("#chart1").append("svg")
         .attr("width", width)
         .attr("height", height)
@@ -45,7 +47,11 @@ function initDashboard(parseData) {
     createChart4();
 }
 
+
 function createChart1(parseData) {
+    const width = 960; // Adjust width if necessary
+    const height = 600; // Adjust height if necessary
+
     const projection = d3.geoMercator()
         .scale(150)
         .translate([width / 2, height / 1.5]);
@@ -66,6 +72,8 @@ function createChart1(parseData) {
         .style("pointer-events", "none")
         .style("opacity", 0);
 
+    let selectedCountryPath = null; // Track the currently selected country path
+
     // Aggregate data by country
     const dataByCountry = d3.rollups(
         parseData,
@@ -81,7 +89,12 @@ function createChart1(parseData) {
     const countryDataMap = new Map(dataByCountry);
 
     const countries = Array.from(countryDataMap.keys());
-    const colorScale = d3.scaleOrdinal(d3.schemeCategory10).domain(countries);
+    const confirmedValues = countries.map(country => countryDataMap.get(country).confirmed);
+    const maxConfirmed = d3.max(confirmedValues);
+    const minConfirmed = d3.min(confirmedValues);
+
+    const colorScale = d3.scaleSequential(d3.interpolateOranges)
+        .domain([minConfirmed, maxConfirmed]);
 
     // Load external geojson data and create the map
     d3.json("https://raw.githubusercontent.com/holtzy/D3-graph-gallery/master/DATA/world.geojson").then(function (geojson) {
@@ -89,40 +102,79 @@ function createChart1(parseData) {
             .data(geojson.features)
             .enter()
             .append("path")
-            .attr("d", path);
-
-        // Calculate bounding box of the map
-        const [[x0, y0], [x1, y1]] = d3.geoPath(projection).bounds(geojson);
-
-        // Append a rectangle to act as background color
-        chart1.append("rect")
-            .attr("x", x0)
-            .attr("y", y0)
-            .attr("width", x1 - x0)
-            .attr("height", y1 - y0)
-            .attr("fill", "#e6f2ff") 
-            .lower(); 
-
-        // Update country paths
-        countryPaths
-            .attr("class", "country")
+            .attr("d", path)
+            .attr("class", "country-path")
+            .attr("stroke", "black") // Stroke color for borders
+            .attr("stroke-width", 0.5) // Stroke width for borders
             .attr("fill", d => {
                 const countryData = countryDataMap.get(d.properties.name);
-                return countryData ? colorScale(d.properties.name) : "#ccc";
+                return countryData ? colorScale(countryData.confirmed) : "#ccc";
             })
             .on("mouseover", function (event, d) {
-                const countryData = countryDataMap.get(d.properties.name);
-                tooltip.transition().duration(200).style("opacity", .9);
-                tooltip.html(countryData ? `${d.properties.name}<br>Confirmed: ${countryData.confirmed}<br>Deaths: ${countryData.deaths}<br>Recovered: ${countryData.recovered}<br>Active: ${countryData.active}` : `${d.properties.name}<br>No data`)
-                    .style("left", (event.pageX) + "px")
-                    .style("top", (event.pageY - 28) + "px");
+                if (selectedCountryPath !== this) {
+                    d3.select(this)
+                        .attr("fill", "orange"); // Example of hover effect: change fill color to orange
+
+                    const countryData = countryDataMap.get(d.properties.name);
+                    tooltip.transition().duration(200).style("opacity", .9);
+                    tooltip.html(countryData ? `${d.properties.name}<br>Confirmed: ${countryData.confirmed}<br>Deaths: ${countryData.deaths}<br>Recovered: ${countryData.recovered}<br>Active: ${countryData.active}` : `${d.properties.name}<br>No data`)
+                        .style("left", (event.pageX) + "px")
+                        .style("top", (event.pageY - 28) + "px");
+                }
             })
             .on("mouseout", function () {
-                tooltip.transition().duration(500).style("opacity", 0);
+                if (selectedCountryPath !== this) {
+                    d3.select(this)
+                        .attr("fill", d => {
+                            const countryData = countryDataMap.get(d.properties.name);
+                            return countryData ? colorScale(countryData.confirmed) : "#ccc";
+                        });
+
+                    tooltip.transition().duration(500).style("opacity", 0);
+                }
             })
             .on("click", function (event, d) {
-                d3.select(this).style("fill", "red");
+                if (selectedCountryPath) {
+                    // Reset previously selected country path
+                    d3.select(selectedCountryPath)
+                        .attr("fill", d => {
+                            const countryData = countryDataMap.get(d.properties.name);
+                            return countryData ? colorScale(countryData.confirmed) : "#ccc";
+                        });
+                }
+
+                // Set the current selection
+                selectedCountryPath = this;
+
+                // Highlight the clicked country path
+                d3.select(this)
+                    .attr("fill", "red"); // Example of selected effect: change fill color to red
             });
+            geojson.features.forEach(feature => {
+                const countryName = feature.properties.name;
+                const countryData = countryDataMap.get(countryName);
+                if (countryData && countryData.confirmed > 1000000) {
+                    const [cx, cy] = path.centroid(feature); // Get the centroid of the country path
+                    const radius = Math.sqrt(countryData.confirmed) / 500; // Adjusted to make bubbles smaller
+        
+                    chart1.append("circle")
+                        .attr("cx", cx)
+                        .attr("cy", cy)
+                        .attr("r", 0)
+                        .style("fill", "rgba(255, 0, 0, 0.5)") // Adjust bubble color and opacity
+                        .transition()
+                        .duration(500)
+                        .attr("r", radius);
+                }
+            });
+        // Append a rectangle to act as background color
+        chart1.append("rect")
+            .attr("x", 0)
+            .attr("y", 0)
+            .attr("width", width)
+            .attr("height", height)
+            .attr("fill", "#e6f2ff")
+            .lower(); // Place the rectangle behind other elements
 
         // Filtering
         const filterMenu = d3.select("body").append("select")
@@ -142,8 +194,76 @@ function createChart1(parseData) {
         countries.forEach(country => {
             filterMenu.append("option").attr("value", country).text(country);
         });
+
+        // Add legend to the legend container
+// Create legend container
+const legendContainer = d3.select("#legend-container")
+
+
+// Create SVG for legend
+const legend = legendContainer.append("svg")
+    .attr("width", 200)
+    .attr("height", countries.length * 20); // Adjust height based on number of items
+
+// Define legend scale
+const legendScale = d3.scaleLinear()
+    .domain([minConfirmed, maxConfirmed])
+    .range([180, 0]); // Invert range for vertical layout
+
+// Create legend axis
+const legendAxis = d3.axisRight(legendScale)
+    .ticks(5); // Adjust number of ticks as needed
+
+// Append legend axis
+legend.append("g")
+    .attr("transform", "translate(190, 10)") // Adjust position as needed
+    .call(legendAxis);
+
+// Add legend label
+legend.append("text")
+    .attr("x", 10)
+    .attr("y", 0)
+    .attr("dy", "-0.5em")
+    .text("Confirmed Cases");
+
+// Add color gradient to legend
+const defs = legend.append("defs");
+
+const linearGradient = defs.append("linearGradient")
+    .attr("id", "linear-gradient")
+    .attr("x1", "0%")
+    .attr("y1", "0%")
+    .attr("x2", "0%")
+    .attr("y2", "100%");
+
+linearGradient.selectAll("stop")
+    .data(colorScale.ticks().map((t, i, n) => ({
+        offset: `${100 * i / n.length}%`,
+        color: colorScale(t)
+    })))
+    .enter().append("stop")
+    .attr("offset", d => d.offset)
+    .attr("stop-color", d => d.color);
+
+legend.append("rect")
+    .attr("x", 10)
+    .attr("y", 10)
+    .attr("width", 10)
+    .attr("height", 180)
+    .style("fill", "url(#linear-gradient)");
+
+// Adjust legend scale ticks
+legend.append("g")
+    .attr("transform", "translate(20, 10)")
+    .call(legendAxis);
+
+
     });
 }
+
+
+
+
 
 function createChart2(parseData) {
     const margin = { top: 50, right: 50, bottom: 100, left: 50 };
