@@ -151,9 +151,10 @@ div.tooltip {
     align-items: flex-start;
 }
 
-#chart1 {
+/* #chart1 {
   
 }
+*/
 
 #legend-container {
     width: 200px; /* Adjust width as needed */
@@ -162,4 +163,25 @@ div.tooltip {
     margin-left: 20px; /* Space between chart and legend */
     background: #f9f9f9; /* Optional: background color for legend */
     padding: 10px; /* Optional: padding inside the legend container */
+}
+
+/* Styling for the selection boxes */
+.selection-box {
+    margin-bottom: 15px;
+}
+
+.selection-box label {
+    margin-right: 10px;
+    font-weight: bold;
+}
+
+.selection-box select {
+    padding: 5px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+}
+
+.selection-container {
+    display: flex;
+    flex-direction: column;
 }
