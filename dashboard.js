@@ -44,7 +44,7 @@ function initDashboard(parseData) {
     createChart1(parseData);
     createChart2(parseData);
     createChart3(parseData);
-    createChart4();
+    createChart4(parseData);
 }
 
 
@@ -599,8 +599,6 @@ function createChart4(parseData) {
             .text(country);
     });
 }
-
-
 
 
 // clear files if changes (dataset) occur
