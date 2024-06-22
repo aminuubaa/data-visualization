@@ -444,8 +444,114 @@ function createChart3(parseData) {
     });
 }
 
-function createChart4() {
-    
+function createChart4(parseData) {
+    const margin = { top: 50, right: 150, bottom: 50, left: 100 };
+    const width = 460 - margin.left + margin.right;
+    const height = 400 - margin.top + margin.bottom;
+
+    const aggregatedData = d3.groups(parseData, d => d.Date, d => d.Country)
+        .map(([date, countries]) => {
+            const entry = { date: new Date(date) };
+            countries.forEach(([country, values]) => {
+                entry[country] = d3.sum(values, d => d.Confirmed);
+            });
+            return entry;
+        });
+
+    const countryTotals = d3.rollups(parseData, v => d3.sum(v, d => d.Confirmed), d => d.Country)
+        .sort(([, a], [, b]) => d3.descending(a, b))
+        .slice(0, 10)
+        .map(([country]) => country);
+
+    const filteredData = aggregatedData.map(d => {
+        const entry = { date: d.date };
+        countryTotals.forEach(country => {
+            entry[country] = d[country] || 0;
+        });
+        return entry;
+    });
+
+    d3.select("#chart4").selectAll("*").remove();
+
+    const svg = d3.select("#chart4")
+        .append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    const x = d3.scaleTime()
+        .domain(d3.extent(filteredData, d => d.date))
+        .range([0, width]);
+
+    const y = d3.scaleLinear()
+        .domain([0, d3.max(filteredData, d => d3.sum(countryTotals, country => d[country]))])
+        .range([height, 0]);
+
+    const color = d3.scaleOrdinal()
+        .domain(countryTotals)
+        .range(d3.schemeCategory10);
+
+    const stack = d3.stack()
+        .keys(countryTotals)
+        .order(d3.stackOrderNone)
+        .offset(d3.stackOffsetNone);
+
+    const stackedData = stack(filteredData);
+
+    const area = d3.area()
+        .x(d => x(d.data.date))
+        .y0(d => y(d[0]))
+        .y1(d => y(d[1]));
+
+    const tooltip = d3.select("body").append("div")
+        .attr("class", "tooltip")
+        .style("position", "absolute")
+        .style("opacity", 0)
+        .style("background", "lightsteelblue")
+        .style("padding", "5px")
+        .style("border-radius", "8px")
+        .style("pointer-events", "none");
+
+    svg.selectAll("path")
+        .data(stackedData)
+        .enter().append("path")
+        .attr("class", d => `stackedArea ${d.key.replace(/\s+/g, '')}`)
+        .attr("fill", d => color(d.key))
+        .attr("d", area)
+        .on("mouseover", function(event, d) {
+            tooltip.transition().duration(200).style("opacity", .9);
+            tooltip.html(d.key)
+                .style("left", (event.pageX + 5) + "px")
+                .style("top", (event.pageY - 28) + "px");
+        })
+        .on("mouseout", function() {
+            tooltip.transition().duration(500).style("opacity", 0);
+        });
+
+    svg.append("g")
+        .attr("transform", "translate(0," + height + ")")
+        .call(d3.axisBottom(x).ticks(5));
+
+    svg.append("g")
+        .call(d3.axisLeft(y));
+
+    const legend = svg.append("g")
+        .attr("transform", `translate(${width + 20}, 0)`);
+
+    countryTotals.forEach((country, index) => {
+        legend.append("rect")
+            .attr("x", 0)
+            .attr("y", index * 20)
+            .attr("width", 10)
+            .attr("height", 10)
+            .attr("fill", color(country));
+
+        legend.append("text")
+            .attr("x", 20)
+            .attr("y", index * 20 + 10)
+            .text(country);
+    });
 }
 
 
