@@ -104,45 +104,56 @@
 
 <!-- Tab 3 -->
 <div id="Dashboard" class="tabcontent">
-    <h1>Dashboard Example</h1>
+    <h1>COVID-19 Dashboard</h1>
 
     <!-- TODO: The environment of your dashboard can be freely customized. Here is a general layout to get you started. -->
 
     <!-- Grid container -->
     <div class="dashboardGrid">
 
-        <!-- chart 1 -->
+        <!-- chart 1 (Map) -->
         <div class="container">
-            <div id="chart-container">
-                <div id="chart1"></div>
-                <div id="legend-container"></div>
+            <h2>Choropleth Map</h2>
+            <h4>COVID-19 Cases by Country</h4>
+            <div class="selection-box" id="map-selection">
+                <label for="map-country">Select Country:</label>
+                <select id="map-country">
+                    <option value="All">All</option>
+                    <!-- Country options will be populated dynamically -->
+                </select>
             </div>
+            <div id="chart1"></div>
         </div>
 
-        <!-- chart 2 -->
+        <!-- chart 2 (Scatter Plot) -->
         <div class="container">
-           <h2>Chart 2</h2>
-			 <h4>Data representation 2.</h4>
-            <!-- radar chart SVG -->
+            <h2>Line Chart</h2>
+            <h4>COVID-19 Trends Over Time</h4>
             <div id="chart2"></div>
         </div>
 
-        <!-- chart 3 -->
+        <!-- chart 3 (Race Bar Chart) -->
         <div class="container">
-            <h2>Chart 3</h2>
-			  <h4>Data representation 3.</h4>
-            <!-- radar chart SVG -->
+            <h2>Race Bar Chart</h2>
+            <h4>Dynamic COVID-19 Data</h4>
+            <div class="selection-box" id="race-bar-selection">
+                <label for="race-bar-category">Select Attribute:</label>
+                <select id="race-bar-category">
+                    <option value="Confirmed">Confirmed</option>
+                    <option value="Deaths">Deaths</option>
+                    <option value="Recovered">Recovered</option>
+                    <option value="Active">Active</option>
+                </select>
+            </div>
             <div id="chart3"></div>
         </div>
 
-        <!-- chart 4 -->
+        <!-- chart 4 (Line Chart) -->
         <div class="container">
-            <h2>Chart 4</h2>
-            <h4>Data representation 4.</h4>
-            <!-- radar chart SVG -->
+            <h2>Stacked Area Chart</h2>
+            <h4>Trends based on countries</h4>
             <div id="chart4"></div>
         </div>
-
     </div>
 
 </div>
