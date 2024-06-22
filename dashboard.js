@@ -464,7 +464,7 @@ function createChart3(parseData) {
         .call(d3.axisLeft(yScale).tickSize(0).tickFormat(""));
 
     d3.select("#race-bar-category").on("change", function() {
-        currentIndex = 0; // Reset index
+        currentIndex = 0; 
         startRace();
     });
 
@@ -599,6 +599,7 @@ function createChart4(parseData) {
             .text(country);
     });
 }
+
 
 
 
