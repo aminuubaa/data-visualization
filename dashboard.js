@@ -331,20 +331,19 @@ function createChart2(parseData) {
 
 
 function createChart3(parseData) {
-    const margin = { top: 50, right: 150, bottom: 50, left: 50 };
+    const margin = { top: 50, right: 150, bottom: 100, left: 100 };
     const width = 700 - margin.left - margin.right;
     const height = 500 - margin.top - margin.bottom;
 
     const groupedData = d3.groups(parseData, d => d.Date);
 
-    const xScale = d3.scaleLinear()
-        .range([0, width]);
+    const xScale = d3.scaleLinear().range([0, width]);
+    const yScale = d3.scaleBand().range([0, height]).padding(0.1);
 
-    const yScale = d3.scaleBand()
-        .range([0, height])
-        .padding(0.1);
+     // Remove any previous SVG containers
+     d3.select("#chart3").selectAll("*").remove();
 
-    const svg = chart3.append("svg")
+    const svg = d3.select("#chart3").append("svg")
         .attr("width", width + margin.left + margin.right)
         .attr("height", height + margin.top + margin.bottom)
         .append("g")
@@ -352,13 +351,18 @@ function createChart3(parseData) {
 
     const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
 
-    
-    function update(date) {
-        const data = groupedData.find(d => d[0] === date)[1];
-        const top20Data = data.sort((a, b) => b.Confirmed - a.Confirmed).slice(0, 20);
+    let selectedCountries = new Set();
 
-        xScale.domain([0, d3.max(top20Data, d => +d.Confirmed)]);
+    function update(date) {
+        const attribute = d3.select("#race-bar-category").node().value;
+        const data = groupedData.find(d => d[0] === date)[1];
+        const top20Data = data.sort((a, b) => b[attribute] - a[attribute]).slice(0, 20);
+
+        xScale.domain([0, d3.max(top20Data, d => +d[attribute])]);
         yScale.domain(top20Data.map(d => d.Country));
+
+        // Remove empty containers
+        svg.selectAll("*").remove();
 
         const bars = svg.selectAll(".bar")
             .data(top20Data, d => d.Country);
@@ -368,14 +372,30 @@ function createChart3(parseData) {
             .attr("class", "bar")
             .attr("x", 0)
             .attr("y", d => yScale(d.Country))
-            .attr("width", d => xScale(d.Confirmed))
+            .attr("width", d => xScale(d[attribute]))
             .attr("height", yScale.bandwidth())
             .attr("fill", d => colorScale(d.Country))
-            .attr("opacity", 0.7);
+            .attr("opacity", 0.7)
+            .on("mouseover", function(event, d) {
+                d3.select(this).attr("opacity", 1);
+                showTooltip(d.Country, event);
+            })
+            .on("mouseout", function() {
+                d3.select(this).attr("opacity", 0.7);
+                hideTooltip();
+            })
+            .on("click", function(event, d) {
+                if (selectedCountries.has(d.Country)) {
+                    selectedCountries.delete(d.Country);
+                } else {
+                    selectedCountries.add(d.Country);
+                }
+                updateChart4();
+            });
 
         bars.transition().duration(1000)
             .attr("y", d => yScale(d.Country))
-            .attr("width", d => xScale(d.Confirmed));
+            .attr("width", d => xScale(d[attribute]));
 
         bars.exit().remove();
 
@@ -385,14 +405,14 @@ function createChart3(parseData) {
         labels.enter()
             .append("text")
             .attr("class", "label")
-            .attr("x", d => xScale(d.Confirmed) + 5)
+            .attr("x", d => xScale(d[attribute]) + 5)
             .attr("y", d => yScale(d.Country) + yScale.bandwidth() / 2 + 5)
-            .text(d => `${d.Country}: ${d.Confirmed}`);
+            .text(d => `${d.Country}: ${d[attribute]}`);
 
         labels.transition().duration(1000)
-            .attr("x", d => xScale(d.Confirmed) + 5)
+            .attr("x", d => xScale(d[attribute]) + 5)
             .attr("y", d => yScale(d.Country) + yScale.bandwidth() / 2 + 5)
-            .text(d => `${d.Country}: ${d.Confirmed}`);
+            .text(d => `${d.Country}: ${d[attribute]}`);
 
         labels.exit().remove();
 
@@ -413,15 +433,26 @@ function createChart3(parseData) {
 
         dateLabel.exit().remove();
 
-        svg.select(".x-axis")
-            .transition().duration(1000)
+        svg.append("g")
+            .attr("class", "x-axis")
+            .attr("transform", "translate(0," + height + ")")
             .call(d3.axisBottom(xScale).ticks(5));
 
-        svg.select(".y-axis").call(d3.axisLeft(yScale).tickSize(0).tickFormat(""));
-
+        svg.append("g")
+            .attr("class", "y-axis")
+            .call(d3.axisLeft(yScale).tickSize(0).tickFormat(""));
     }
 
-    update(groupedData[0][0]);
+    let currentIndex = 0;
+    function startRace() {
+        const interval = setInterval(() => {
+            update(groupedData[currentIndex][0]);
+            currentIndex++;
+            if (currentIndex >= groupedData.length) {
+                clearInterval(interval);
+            }
+        }, 1000);
+    }
 
     svg.append("g")
         .attr("class", "x-axis")
@@ -432,16 +463,31 @@ function createChart3(parseData) {
         .attr("class", "y-axis")
         .call(d3.axisLeft(yScale).tickSize(0).tickFormat(""));
 
-    // Add a play button for the bar chart race animation
-    const playButton = d3.select("body").append("button").text("Play");
-    playButton.on("click", function () {
-        let i = 0;
-        const interval = setInterval(() => {
-            update(groupedData[i][0]);
-            i++;
-            if (i >= groupedData.length) clearInterval(interval);
-        }, 1000);
+    d3.select("#race-bar-category").on("change", function() {
+        currentIndex = 0; // Reset index
+        startRace();
     });
+
+    function showTooltip(country, event) {
+        d3.selectAll(".stackedArea").style("opacity", 0.3);
+        d3.select(`.stackedArea.${country.replace(/\s+/g, '')}`).style("opacity", 1);
+        tooltip.transition().duration(200).style("opacity", .9);
+        tooltip.html(country)
+            .style("left", (event.pageX + 5) + "px")
+            .style("top", (event.pageY - 28) + "px");
+    }
+
+    function hideTooltip() {
+        d3.selectAll(".stackedArea").style("opacity", 1);
+        tooltip.transition().duration(500).style("opacity", 0);
+    }
+
+    function updateChart4() {
+        const selectedData = parseData.filter(d => selectedCountries.has(d.Country));
+        createChart4(selectedData);
+    }
+
+    startRace(); 
 }
 
 function createChart4(parseData) {
