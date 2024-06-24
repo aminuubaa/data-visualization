@@ -14,13 +14,18 @@
 
 // TODO: use descriptive names for variables
 let chart1, chart2, chart3, chart4;
+let country;
+let parsedata_backup;
 
 function initDashboard(parseData) {
-    width=800
-    height=600
+    width = 800
+    height = 600
+    parsedata_backup = parseData
     chart1 = d3.select("#chart1").append("svg")
         .attr("width", width)
         .attr("height", height)
+        .attr("viewBox", "0 0 800 600")
+        .attr("preserveAspectRatio", "xMidYMid meet")
         .call(d3.zoom().on("zoom", function (event) {
             chart1.attr("transform", event.transform);
         }))
@@ -41,10 +46,24 @@ function initDashboard(parseData) {
         .attr("height", height)
         .append("g");
 
-    createChart1(parseData);
-    createChart2(parseData);
+    console.log("pasring data", parseData)
+
+    createChart4("Deaths", parseData);
     createChart3(parseData);
-    createChart4();
+    createChart1(parseData);
+    createChart2(null,parseData);
+
+    // d3.tsv("population.tsv").then(populationData => {
+    //     // Step 2: Call functions to create charts after data is loaded and processed
+    //     createChart4(parseData);
+    //     createChart1(parseData, populationData);
+    //     createChart2(parseData);
+    //     createChart3(parseData);
+
+    // }).catch(error => {
+    //     console.log("Error loading population data:", error);
+    // });
+
 }
 
 
@@ -89,7 +108,7 @@ function createChart1(parseData) {
     const countryDataMap = new Map(dataByCountry);
 
     const countries = Array.from(countryDataMap.keys());
-    const confirmedValues = countries.map(country => countryDataMap.get(country).confirmed);
+    const confirmedValues = countries.map(country => countryDataMap.get(country).deaths);
     const maxConfirmed = d3.max(confirmedValues);
     const minConfirmed = d3.min(confirmedValues);
 
@@ -148,25 +167,33 @@ function createChart1(parseData) {
 
                 // Highlight the clicked country path
                 d3.select(this)
-                    .attr("fill", "red"); // Example of selected effect: change fill color to red
+                    .attr("fill", "red")
+                    .transition()
+                    .duration(500)
+                    .attr("fill", "red");
+
+                country = d.properties.name;
+                createChart2(d.properties.name, parseData);
+                createChart4(d.properties.name, parseData);
+
             });
-            geojson.features.forEach(feature => {
-                const countryName = feature.properties.name;
-                const countryData = countryDataMap.get(countryName);
-                if (countryData && countryData.confirmed > 1000000) {
-                    const [cx, cy] = path.centroid(feature); // Get the centroid of the country path
-                    const radius = Math.sqrt(countryData.confirmed) / 500; // Adjusted to make bubbles smaller
-        
-                    chart1.append("circle")
-                        .attr("cx", cx)
-                        .attr("cy", cy)
-                        .attr("r", 0)
-                        .style("fill", "rgba(255, 0, 0, 0.5)") // Adjust bubble color and opacity
-                        .transition()
-                        .duration(500)
-                        .attr("r", radius);
-                }
-            });
+        geojson.features.forEach(feature => {
+            const countryName = feature.properties.name;
+            const countryData = countryDataMap.get(countryName);
+            if (countryData && countryData.confirmed > 100000) {
+                const [cx, cy] = path.centroid(feature); // Get the centroid of the country path
+                const radius = Math.sqrt(countryData.confirmed) / 500; // Adjusted to make bubbles smaller
+
+                chart1.append("circle")
+                    .attr("cx", cx)
+                    .attr("cy", cy)
+                    .attr("r", 0)
+                    .style("fill", "rgba(255, 0, 0, 0.5)") // Adjust bubble color and opacity
+                    .transition()
+                    .duration(500)
+                    .attr("r", radius);
+            }
+        });
         // Append a rectangle to act as background color
         chart1.append("rect")
             .attr("x", 0)
@@ -196,97 +223,128 @@ function createChart1(parseData) {
         });
 
         // Add legend to the legend container
-// Create legend container
-const legendContainer = d3.select("#legend-container")
+        // Create legend container
 
 
-// Create SVG for legend
-const legend = legendContainer.append("svg")
-    .attr("width", 200)
-    .attr("height", countries.length * 20); // Adjust height based on number of items
+        const legendContainer = d3.select("#legend-container")
+        const legend = legendContainer.append("svg")
+            .attr("width", 200)
+            .attr("height", 300);
+        const legendScale = d3.scaleLinear()
+            .domain([minConfirmed, maxConfirmed])
+            .range([180, 0]); // Invert range for vertical layout
 
-// Define legend scale
-const legendScale = d3.scaleLinear()
-    .domain([minConfirmed, maxConfirmed])
-    .range([180, 0]); // Invert range for vertical layout
+        // Create legend axis
+        const legendAxis = d3.axisRight(legendScale)
+            .ticks(5); // Adjust number of ticks as needed
 
-// Create legend axis
-const legendAxis = d3.axisRight(legendScale)
-    .ticks(5); // Adjust number of ticks as needed
+        // Append legend axis
+        legend.append("g")
+            .attr("transform", "translate(190, 10)") // Adjust position as needed
+            .call(legendAxis);
 
-// Append legend axis
-legend.append("g")
-    .attr("transform", "translate(190, 10)") // Adjust position as needed
-    .call(legendAxis);
+        // Add legend label
+        legend.append("text")
+            .attr("x", 10)
+            .attr("y", 0)
+            .attr("dy", "-0.5em")
+            .text("Confirmed Cases");
 
-// Add legend label
-legend.append("text")
-    .attr("x", 10)
-    .attr("y", 0)
-    .attr("dy", "-0.5em")
-    .text("Confirmed Cases");
+        // Add color gradient to legend
+        const defs = legend.append("defs");
 
-// Add color gradient to legend
-const defs = legend.append("defs");
+        const linearGradient = defs.append("linearGradient")
+            .attr("id", "linear-gradient")
+            .attr("x1", "0%")
+            .attr("y1", "0%")
+            .attr("x2", "0%")
+            .attr("y2", "100%");
 
-const linearGradient = defs.append("linearGradient")
-    .attr("id", "linear-gradient")
-    .attr("x1", "0%")
-    .attr("y1", "0%")
-    .attr("x2", "0%")
-    .attr("y2", "100%");
+        linearGradient.selectAll("stop")
+            .data(colorScale.ticks().map((t, i, n) => ({
+                offset: `${100 * i / n.length}%`,
+                color: colorScale(t)
+            })))
+            .enter().append("stop")
+            .attr("offset", d => d.offset)
+            .attr("stop-color", d => d.color);
 
-linearGradient.selectAll("stop")
-    .data(colorScale.ticks().map((t, i, n) => ({
-        offset: `${100 * i / n.length}%`,
-        color: colorScale(t)
-    })))
-    .enter().append("stop")
-    .attr("offset", d => d.offset)
-    .attr("stop-color", d => d.color);
+        legend.append("rect")
+            .attr("x", 10)
+            .attr("y", 10)
+            .attr("width", 10)
+            .attr("height", 180)
+            .style("fill", "url(#linear-gradient)");
 
-legend.append("rect")
-    .attr("x", 10)
-    .attr("y", 10)
-    .attr("width", 10)
-    .attr("height", 180)
-    .style("fill", "url(#linear-gradient)");
-
-// Adjust legend scale ticks
-legend.append("g")
-    .attr("transform", "translate(20, 10)")
-    .call(legendAxis);
+        // Adjust legend scale ticks
+        legend.append("g")
+            .attr("transform", "translate(20, 10)")
+            .call(legendAxis);
 
 
     });
 }
 
+function getCountryData(country, data) {
+
+    const parseDate = d3.timeParse("%m/%d/%Y");
+
+    // Filter data for the specified country
+    let filteredData = null;
+
+if (!country || country.length === 0) {
+    console.error("No data available for the selected country.", data);
+    filteredData = data;
+} else {
+    filteredData = data.filter(d => d.Country === country);
+}
+     
+
+    // Create an array to hold aggregated monthly data
+    const monthlyData = [];
+
+    // Group data by year first
+    const dataByYear = d3.group(filteredData, d => parseDate(d.Date).getFullYear());
+
+    // Iterate through each year's data
+    dataByYear.forEach((yearData, year) => {
+        // Group data by month within the current year
+        const dataByMonth = d3.group(yearData, d => parseDate(d.Date).getMonth());
+
+        // Iterate through each month within the current year
+        dataByMonth.forEach((monthData, month) => {
+            // Aggregate values for the current month in the current year
+            const aggregatedData = {
+                date: new Date(year, month, 1), // Use the 1st day of the month as the date
+                confirmed: d3.sum(monthData, d => +d.Confirmed),
+                deaths: d3.sum(monthData, d => +d.Deaths),
+                recovered: d3.sum(monthData, d => +d.Recovered),
+                active: d3.sum(monthData, d => +d.Active)
+            };
+
+            monthlyData.push(aggregatedData);
+        });
+    });
+
+    return monthlyData;
+}
 
 
 
 
-function createChart2(parseData) {
+function createChart2(country, data) {
+
+    const countryData = getCountryData(country, data);
+
+   
+
+    console.log("countr data in the chart 2 function is", countryData)
     const margin = { top: 50, right: 50, bottom: 100, left: 50 };
     const width = 700 - margin.left - margin.right;
     const height = 500 - margin.top - margin.bottom;
 
-    // Aggregate data by country
-    const aggregatedData = d3.rollups(
-        parseData,
-        v => ({
-            confirmed: d3.sum(v, d => d.Confirmed),
-            deaths: d3.sum(v, d => d.Deaths)
-        }),
-        d => d.Country
-    );
-
-    const xScale = d3.scaleLinear()
-        .domain([0, d3.max(aggregatedData, d => d[1].confirmed)])
-        .range([0, width]);
-
-    const yScale = d3.scaleLinear()
-        .domain([0, d3.max(aggregatedData, d => d[1].deaths)])
-        .range([height, 0]);
+    // Clear previous chart
+    chart2.selectAll("*").remove();
 
     const svg = chart2.append("svg")
         .attr("width", width + margin.left + margin.right)
@@ -294,57 +352,134 @@ function createChart2(parseData) {
         .append("g")
         .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-    svg.selectAll("circle")
-        .data(aggregatedData)
-        .enter()
-        .append("circle")
-        .attr("cx", d => xScale(d[1].confirmed))
-        .attr("cy", d => yScale(d[1].deaths))
-        .attr("r", 5)
-        .style("fill", "steelblue")
-        .append("title")
-        .text(d => `${d[0]}\nConfirmed: ${d[1].confirmed}\nDeaths: ${d[1].deaths}`);
+    // Extract the dates from your data
+    const dates = countryData.map(d => d.date);
 
+    const xScale = d3.scalePoint() // Using scalePoint for discrete dates
+        .domain(dates)
+        .range([0, width]);
+
+    const yScale = d3.scaleLinear()
+        .domain([0, d3.max(countryData, d => d.confirmed)])
+        .range([height, 0]);
+
+    const line = d3.line()
+        .x(d => xScale(d.date))
+        .y(d => yScale(d.confirmed));
+
+    svg.append("path")
+        .datum(countryData)
+        .attr("fill", "none")
+        .attr("stroke", "steelblue")
+        .attr("stroke-width", 1.5)
+        .attr("d", line);
+
+    // Add additional lines for deaths, recovered, and active cases
+    const lineDeaths = d3.line()
+        .x(d => xScale(d.date))
+        .y(d => yScale(d.deaths));
+
+    svg.append("path")
+        .datum(countryData)
+        .attr("fill", "none")
+        .attr("stroke", "red")
+        .attr("stroke-width", 1.5)
+        .attr("d", lineDeaths);
+
+    const lineRecovered = d3.line()
+        .x(d => xScale(d.date))
+        .y(d => yScale(d.recovered));
+
+    svg.append("path")
+        .datum(countryData)
+        .attr("fill", "none")
+        .attr("stroke", "green")
+        .attr("stroke-width", 1.5)
+        .attr("d", lineRecovered);
+
+    const lineActive = d3.line()
+        .x(d => xScale(d.date))
+        .y(d => yScale(d.active));
+
+    svg.append("path")
+        .datum(countryData)
+        .attr("fill", "none")
+        .attr("stroke", "orange")
+        .attr("stroke-width", 1.5)
+        .attr("d", lineActive);
+
+    // Add axes
     svg.append("g")
         .attr("transform", "translate(0," + height + ")")
-        .call(d3.axisBottom(xScale))
-        .selectAll("text")
-        .attr("transform", "rotate(-45)")
-        .style("text-anchor", "end");
+        .call(d3.axisBottom(xScale).tickFormat(d3.timeFormat("%Y-%m-%d"))); // Format the dates here
 
     svg.append("g")
         .call(d3.axisLeft(yScale));
 
+    // Add axis labels
     svg.append("text")
         .attr("x", width / 2)
         .attr("y", height + margin.bottom - 50)
         .attr("text-anchor", "middle")
-        .text("Confirmed Cases");
+        .text("Date");
 
     svg.append("text")
         .attr("transform", "rotate(-90)")
         .attr("x", -height / 2)
         .attr("y", -margin.left + 15)
         .attr("text-anchor", "middle")
-        .text("Deaths");
+        .text("Confirmed Cases");
+
+    // Add legend
+    const legendData = [
+        { name: "Confirmed", color: "steelblue" },
+        { name: "Deaths", color: "red" },
+        { name: "Recovered", color: "green" },
+        { name: "Active", color: "orange" }
+    ];
+
+    const legend = svg.append("g")
+        .attr("transform", `translate(${width - 100}, ${margin.top})`);
+
+    legend.selectAll("rect")
+        .data(legendData)
+        .enter()
+        .append("rect")
+        .attr("x", 0)
+        .attr("y", (d, i) => i * 20)
+        .attr("width", 10)
+        .attr("height", 10)
+        .attr("fill", d => d.color);
+
+    legend.selectAll("text")
+        .data(legendData)
+        .enter()
+        .append("text")
+        .attr("x", 20)
+        .attr("y", (d, i) => i * 20 + 10)
+        .text(d => d.name);
 }
 
 
+
 function createChart3(parseData) {
+    console.log("i am in chart 3")
+
     const margin = { top: 50, right: 150, bottom: 50, left: 50 };
     const width = 700 - margin.left - margin.right;
     const height = 500 - margin.top - margin.bottom;
 
     const groupedData = d3.groups(parseData, d => d.Date);
 
-    const xScale = d3.scaleLinear()
-        .range([0, width]);
+    console.log("group data before update", groupedData)
 
-    const yScale = d3.scaleBand()
-        .range([0, height])
-        .padding(0.1);
+    const xScale = d3.scaleLinear().range([0, width]);
+    const yScale = d3.scaleBand().range([0, height]).padding(0.1);
 
-    const svg = chart3.append("svg")
+    // Remove any previous SVG containers
+    d3.select("#chart3").selectAll("*").remove();
+
+    const svg = d3.select("#chart3").append("svg")
         .attr("width", width + margin.left + margin.right)
         .attr("height", height + margin.top + margin.bottom)
         .append("g")
@@ -352,13 +487,23 @@ function createChart3(parseData) {
 
     const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
 
-    
-    function update(date) {
-        const data = groupedData.find(d => d[0] === date)[1];
-        const top20Data = data.sort((a, b) => b.Confirmed - a.Confirmed).slice(0, 20);
+    let selectedCountries = new Set();
 
-        xScale.domain([0, d3.max(top20Data, d => +d.Confirmed)]);
+    function update(date) {
+
+        const attribute = d3.select("#race-bar-category").node().value;
+        const data = groupedData.find(d => d[0] === date)[1];
+        const top20Data = data.sort((a, b) => b[attribute] - a[attribute]).slice(0, 20);
+
+
+        console.log("top 20 ", top20Data)
+        console.log("data", data)
+
+        xScale.domain([0, d3.max(top20Data, d => +d[attribute])]);
         yScale.domain(top20Data.map(d => d.Country));
+
+        // Remove empty containers
+        svg.selectAll("*").remove();
 
         const bars = svg.selectAll(".bar")
             .data(top20Data, d => d.Country);
@@ -368,14 +513,30 @@ function createChart3(parseData) {
             .attr("class", "bar")
             .attr("x", 0)
             .attr("y", d => yScale(d.Country))
-            .attr("width", d => xScale(d.Confirmed))
+            .attr("width", d => xScale(d[attribute]))
             .attr("height", yScale.bandwidth())
             .attr("fill", d => colorScale(d.Country))
-            .attr("opacity", 0.7);
+            .attr("opacity", 0.7)
+            .on("mouseover", function (event, d) {
+                d3.select(this).attr("opacity", 1);
+                showTooltip(d.Country, event);
+            })
+            .on("mouseout", function () {
+                d3.select(this).attr("opacity", 0.7);
+                hideTooltip();
+            })
+            .on("click", function (event, d) {
+                if (selectedCountries.has(d.Country)) {
+                    selectedCountries.delete(d.Country);
+                } else {
+                    selectedCountries.add(d.Country);
+                }
+                updateChart4();
+            });
 
         bars.transition().duration(1000)
             .attr("y", d => yScale(d.Country))
-            .attr("width", d => xScale(d.Confirmed));
+            .attr("width", d => xScale(d[attribute]));
 
         bars.exit().remove();
 
@@ -385,14 +546,14 @@ function createChart3(parseData) {
         labels.enter()
             .append("text")
             .attr("class", "label")
-            .attr("x", d => xScale(d.Confirmed) + 5)
+            .attr("x", d => xScale(d[attribute]) + 5)
             .attr("y", d => yScale(d.Country) + yScale.bandwidth() / 2 + 5)
-            .text(d => `${d.Country}: ${d.Confirmed}`);
+            .text(d => `${d.Country}: ${d[attribute]}`);
 
         labels.transition().duration(1000)
-            .attr("x", d => xScale(d.Confirmed) + 5)
+            .attr("x", d => xScale(d[attribute]) + 5)
             .attr("y", d => yScale(d.Country) + yScale.bandwidth() / 2 + 5)
-            .text(d => `${d.Country}: ${d.Confirmed}`);
+            .text(d => `${d.Country}: ${d[attribute]}`);
 
         labels.exit().remove();
 
@@ -413,15 +574,26 @@ function createChart3(parseData) {
 
         dateLabel.exit().remove();
 
-        svg.select(".x-axis")
-            .transition().duration(1000)
+        svg.append("g")
+            .attr("class", "x-axis")
+            .attr("transform", "translate(0," + height + ")")
             .call(d3.axisBottom(xScale).ticks(5));
 
-        svg.select(".y-axis").call(d3.axisLeft(yScale).tickSize(0).tickFormat(""));
-
+        svg.append("g")
+            .attr("class", "y-axis")
+            .call(d3.axisLeft(yScale).tickSize(0).tickFormat(""));
     }
 
-    update(groupedData[0][0]);
+    let currentIndex = 0;
+    function startRace() {
+        const interval = setInterval(() => {
+            update(groupedData[currentIndex][0]);
+            currentIndex++;
+            if (currentIndex >= groupedData.length) {
+                clearInterval(interval);
+            }
+        }, 2000);
+    }
 
     svg.append("g")
         .attr("class", "x-axis")
@@ -432,21 +604,164 @@ function createChart3(parseData) {
         .attr("class", "y-axis")
         .call(d3.axisLeft(yScale).tickSize(0).tickFormat(""));
 
-    // Add a play button for the bar chart race animation
-    const playButton = d3.select("body").append("button").text("Play");
-    playButton.on("click", function () {
-        let i = 0;
-        const interval = setInterval(() => {
-            update(groupedData[i][0]);
-            i++;
-            if (i >= groupedData.length) clearInterval(interval);
-        }, 1000);
+    d3.select("#race-bar-category").on("change", function () {
+        currentIndex = 0;
+        startRace();
+    });
+
+    function showTooltip(country, event) {
+        d3.selectAll(".stackedArea").style("opacity", 0.3);
+        d3.select(`.stackedArea.${country.replace(/\s+/g, '')}`).style("opacity", 1);
+        tooltip.transition().duration(200).style("opacity", .9);
+        tooltip.html(country)
+            .style("left", (event.pageX + 5) + "px")
+            .style("top", (event.pageY - 28) + "px");
+    }
+
+    function hideTooltip() {
+        d3.selectAll(".stackedArea").style("opacity", 1);
+        tooltip.transition().duration(500).style("opacity", 0);
+    }
+
+    // function updateChart4() {
+    //     const selectedData = parseData.filter(d => selectedCountries.has(d.Country));
+    //     createChart4(selectedData);
+    // }
+
+    startRace();
+}
+
+
+
+
+function createChart4(selectedCountry, parseData) {
+
+
+    const margin = { top: 20, right: 30, bottom: 30, left: 40 };
+    const width = 700 - margin.left - margin.right;
+    const height = 400 - margin.top - margin.bottom;
+
+    // Clear previous chart
+    chart4.selectAll("*").remove();
+
+    const svg = chart4.append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    // Determine the metric based on the selected radio button
+    let metric;
+    const selectedMetric = document.querySelector('input[name="data-type"]:checked').value;
+    if (selectedMetric === "Active") {
+        metric = "Active";
+    } else if (selectedMetric === "Confirmed") {
+        metric = "Confirmed";
+    } else {
+        metric = "Deaths"; // Default to Deaths if nothing selected
+    }
+
+    // Step 1: Determine the top 5 countries by the selected metric
+    let topCountries;
+    if (selectedCountry === null) {
+        topCountries = Array.from(d3.rollup(
+            parseData,
+            v => d3.sum(v, d => +d[metric]),
+            d => d.Country
+        )).sort((a, b) => b[1] - a[1]).slice(0, 5).map(d => d[0]);
+    } else {
+        topCountries = Array.from(new Set([...[selectedCountry], ...Array.from(d3.rollup(
+            parseData,
+            v => d3.sum(v, d => +d[metric]),
+            d => d.Country
+        )).sort((a, b) => b[1] - a[1]).slice(0, 5).map(d => d[0])]));
+    }
+
+    // Step 2: Aggregate data by month for top 5 countries
+    const dataByMonth = d3.rollups(
+        parseData.filter(d => topCountries.includes(d.Country)),
+        v => {
+            const countryData = {};
+            topCountries.forEach(country => {
+                countryData[country] = d3.sum(v.filter(d => d.Country === country), d => +d[metric]);
+            });
+            return countryData;
+        },
+        d => d3.timeFormat("%b %Y")(d3.timeParse("%m/%d/%Y")(d.Date))
+    );
+
+    // Step 3: Format data into array suitable for D3 stacked area chart
+    const data = dataByMonth.map(([month, countryData]) => ({
+        month: month,
+        ...countryData
+    }));
+
+    const keys = topCountries;
+
+    const x = d3.scaleBand()
+        .domain(data.map(d => d.month))
+        .range([0, width])
+        .padding(0.1);
+
+    const y = d3.scaleLinear()
+        .domain([0, d3.max(data, d => d3.sum(keys, key => d[key]))])
+        .nice()
+        .range([height, 0]);
+
+    const color = d3.scaleOrdinal()
+        .domain(keys)
+        .range(d3.schemeCategory10);
+
+    const stack = d3.stack()
+        .keys(keys)
+        .order(d3.stackOrderNone)
+        .offset(d3.stackOffsetNone);
+
+    const area = d3.area()
+        .x(d => x(d.data.month) + x.bandwidth() / 2)
+        .y0(d => y(d[0]))
+        .y1(d => y(d[1]));
+
+    const stackedData = stack(data);
+
+    svg.selectAll(".layer")
+        .data(stackedData)
+        .enter().append("path")
+        .attr("class", "layer")
+        .attr("fill", d => color(d.key))
+        .attr("d", area);
+
+    svg.append("g")
+        .attr("class", "axis x-axis")
+        .attr("transform", "translate(0," + height + ")")
+        .call(d3.axisBottom(x));
+
+    svg.append("g")
+        .attr("class", "axis y-axis")
+        .call(d3.axisLeft(y));
+
+    // Add legend
+    const legend = svg.append("g")
+        .attr("transform", `translate(${width - 100}, 0)`);
+
+    keys.forEach((key, i) => {
+        const legendRow = legend.append("g")
+            .attr("transform", `translate(0, ${i * 20})`);
+
+        legendRow.append("rect")
+            .attr("width", 10)
+            .attr("height", 10)
+            .attr("fill", color(key));
+
+        legendRow.append("text")
+            .attr("x", -10)
+            .attr("y", 10)
+            .attr("text-anchor", "end")
+            .style("text-transform", "capitalize")
+            .text(key);
     });
 }
 
-function createChart4() {
-    
-}
 
 
 
@@ -471,3 +786,17 @@ function openPage(pageName, elmnt, color) {
     document.getElementById(pageName).style.display = "block";
     elmnt.style.backgroundColor = color;
 }
+
+
+document.addEventListener('DOMContentLoaded', function () {
+
+
+    document.querySelectorAll('input[name="data-type"]').forEach(radio => {
+        radio.addEventListener('change', function () {
+            const selectedMetric = this.value;
+            const selectedCountry = country
+            console.log("ccccc")
+            createChart4(selectedCountry, parsedata_backup);
+        });
+    });
+});
