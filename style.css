@@ -145,10 +145,9 @@ div.tooltip {
     font-size: .7rem;
 }
 
-
 #chart-container {
     display: flex;
-    align-items: flex-start;
+    justify-content: space-between;
 }
 
 /* #chart1 {
@@ -158,7 +157,7 @@ div.tooltip {
 
 #legend-container {
     width: 200px; /* Adjust width as needed */
-    height: 400px; /* Match height of the SVG canvas */
+    height: 578px; /* Match height of the SVG canvas */
     overflow-y: auto; /* Enable vertical scrolling */
     margin-left: 20px; /* Space between chart and legend */
     background: #f9f9f9; /* Optional: background color for legend */
