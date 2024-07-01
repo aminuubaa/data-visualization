@@ -331,7 +331,7 @@ function createChart2(parseData) {
 
 
 function createChart3(parseData) {
-    const margin = { top: 50, right: 150, bottom: 50, left: 50 };
+    const margin = { top: 50, right: 150, bottom: 100, left: 100 };
     const width = 700 - margin.left - margin.right;
     const height = 500 - margin.top - margin.bottom;
 
@@ -340,8 +340,8 @@ function createChart3(parseData) {
     const xScale = d3.scaleLinear().range([0, width]);
     const yScale = d3.scaleBand().range([0, height]).padding(0.1);
 
-     // Remove any previous SVG containers
-     d3.select("#chart3").selectAll("*").remove();
+    // Remove any previous SVG containers
+    d3.select("#chart3").selectAll("*").remove();
 
     const svg = d3.select("#chart3").append("svg")
         .attr("width", width + margin.left + margin.right)
@@ -351,7 +351,11 @@ function createChart3(parseData) {
 
     const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
 
-    let selectedCountries = new Set();
+    let currentIndex = 0;
+    let interval;
+    const speed = 1000;
+    let startIndex = 0;
+    let endIndex = groupedData.length - 1;
 
     function update(date) {
         const attribute = d3.select("#race-bar-category").node().value;
@@ -383,17 +387,9 @@ function createChart3(parseData) {
             .on("mouseout", function() {
                 d3.select(this).attr("opacity", 0.7);
                 hideTooltip();
-            })
-            .on("click", function(event, d) {
-                if (selectedCountries.has(d.Country)) {
-                    selectedCountries.delete(d.Country);
-                } else {
-                    selectedCountries.add(d.Country);
-                }
-                updateChart4();
             });
 
-        bars.transition().duration(1000)
+        bars.transition().duration(speed)
             .attr("y", d => yScale(d.Country))
             .attr("width", d => xScale(d[attribute]));
 
@@ -409,7 +405,7 @@ function createChart3(parseData) {
             .attr("y", d => yScale(d.Country) + yScale.bandwidth() / 2 + 5)
             .text(d => `${d.Country}: ${d[attribute]}`);
 
-        labels.transition().duration(1000)
+        labels.transition().duration(speed)
             .attr("x", d => xScale(d[attribute]) + 5)
             .attr("y", d => yScale(d.Country) + yScale.bandwidth() / 2 + 5)
             .text(d => `${d.Country}: ${d[attribute]}`);
@@ -428,7 +424,7 @@ function createChart3(parseData) {
             .attr("fill", "#333")
             .text(d => d);
 
-        dateLabel.transition().duration(1000)
+        dateLabel.transition().duration(speed)
             .text(d => d);
 
         dateLabel.exit().remove();
@@ -443,34 +439,28 @@ function createChart3(parseData) {
             .call(d3.axisLeft(yScale).tickSize(0).tickFormat(""));
     }
 
-    let currentIndex = 0;
     function startRace() {
-        const interval = setInterval(() => {
+        interval = setInterval(() => {
             update(groupedData[currentIndex][0]);
             currentIndex++;
-            if (currentIndex >= groupedData.length) {
+            if (currentIndex > endIndex) {
                 clearInterval(interval);
             }
-        }, 1000);
+        }, speed);
     }
 
-    svg.append("g")
-        .attr("class", "x-axis")
-        .attr("transform", "translate(0," + height + ")")
-        .call(d3.axisBottom(xScale).ticks(5));
+    function stopRace() {
+        clearInterval(interval);
+    }
 
-    svg.append("g")
-        .attr("class", "y-axis")
-        .call(d3.axisLeft(yScale).tickSize(0).tickFormat(""));
-
-    d3.select("#race-bar-category").on("change", function() {
-        currentIndex = 0; 
-        startRace();
-    });
+    function resetRace() {
+        stopRace();
+        currentIndex = startIndex;
+        update(groupedData[currentIndex][0]);
+        d3.select("#play-button").text("Play");
+    }
 
     function showTooltip(country, event) {
-        d3.selectAll(".stackedArea").style("opacity", 0.3);
-        d3.select(`.stackedArea.${country.replace(/\s+/g, '')}`).style("opacity", 1);
         tooltip.transition().duration(200).style("opacity", .9);
         tooltip.html(country)
             .style("left", (event.pageX + 5) + "px")
@@ -478,17 +468,61 @@ function createChart3(parseData) {
     }
 
     function hideTooltip() {
-        d3.selectAll(".stackedArea").style("opacity", 1);
         tooltip.transition().duration(500).style("opacity", 0);
     }
 
-    function updateChart4() {
-        const selectedData = parseData.filter(d => selectedCountries.has(d.Country));
-        createChart4(selectedData);
-    }
+    // Add play button
+    d3.select("#play-button")
+        .on("click", function() {
+            if (d3.select(this).text() === "Play") {
+                d3.select(this).text("Pause");
+                startRace();
+            } else {
+                d3.select(this).text("Play");
+                stopRace();
+            }
+        });
 
-    startRace(); 
+    // Add reset button
+    d3.select("#reset-button")
+        .on("click", resetRace);
+
+    // Add 'From' date picker
+    d3.select("#from-date")
+        .on("change", function() {
+            const selectedDate = new Date(this.value);
+            startIndex = groupedData.findIndex(d => new Date(d[0]) >= selectedDate);
+            if (startIndex === -1) startIndex = 0;
+            if (startIndex > endIndex) {
+                endIndex = startIndex;
+                d3.select("#to-date").property("value", groupedData[endIndex][0]);
+            }
+            currentIndex = startIndex;
+            update(groupedData[currentIndex][0]);
+        });
+
+    // Add 'To' date picker
+    d3.select("#to-date")
+        .on("change", function() {
+            const selectedDate = new Date(this.value);
+            endIndex = groupedData.findIndex(d => new Date(d[0]) >= selectedDate);
+            if (endIndex === -1) endIndex = groupedData.length - 1;
+            if (endIndex < startIndex) {
+                startIndex = endIndex;
+                d3.select("#from-date").property("value", groupedData[startIndex][0]);
+            }
+            currentIndex = startIndex;
+            update(groupedData[currentIndex][0]);
+        });
+
+    // Set initial values for date pickers
+    d3.select("#from-date").property("value", groupedData[startIndex][0]);
+    d3.select("#to-date").property("value", groupedData[endIndex][0]);
+
+    // Initial call to update with the first date
+    update(groupedData[0][0]);
 }
+
 
 function createChart4(parseData) {
     const margin = { top: 50, right: 150, bottom: 50, left: 100 };
