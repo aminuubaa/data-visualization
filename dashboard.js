@@ -451,7 +451,6 @@ function createChart2(country, data) {
 }
 
 
-
 function createChart3(parseData) {
     const margin = { top: 50, right: 150, bottom: 100, left: 100 };
     const width = 700 - margin.left - margin.right;
@@ -465,7 +464,6 @@ function createChart3(parseData) {
     // Remove any previous SVG containers
     d3.select("#chart3").selectAll("*").remove();
 
-    const svg = d3.select("#chart3").append("svg")
     const svg = d3.select("#chart3").append("svg")
         .attr("width", width + margin.left + margin.right)
         .attr("height", height + margin.top + margin.bottom)
@@ -486,11 +484,7 @@ function createChart3(parseData) {
         const top20Data = data.sort((a, b) => b[attribute] - a[attribute]).slice(0, 20);
 
         xScale.domain([0, d3.max(top20Data, d => +d[attribute])]);
-        xScale.domain([0, d3.max(top20Data, d => +d[attribute])]);
         yScale.domain(top20Data.map(d => d.Country));
-
-        // Remove empty containers
-        svg.selectAll("*").remove();
 
         // Remove empty containers
         svg.selectAll("*").remove();
@@ -503,7 +497,6 @@ function createChart3(parseData) {
             .attr("class", "bar")
             .attr("x", 0)
             .attr("y", d => yScale(d.Country))
-            .attr("width", d => xScale(d[attribute]))
             .attr("width", d => xScale(d[attribute]))
             .attr("height", yScale.bandwidth())
             .attr("fill", d => colorScale(d.Country))
@@ -520,7 +513,6 @@ function createChart3(parseData) {
         bars.transition().duration(speed)
             .attr("y", d => yScale(d.Country))
             .attr("width", d => xScale(d[attribute]));
-            .attr("width", d => xScale(d[attribute]));
 
         bars.exit().remove();
 
@@ -531,15 +523,12 @@ function createChart3(parseData) {
             .append("text")
             .attr("class", "label")
             .attr("x", d => xScale(d[attribute]) + 5)
-            .attr("x", d => xScale(d[attribute]) + 5)
             .attr("y", d => yScale(d.Country) + yScale.bandwidth() / 2 + 5)
-            .text(d => `${d.Country}: ${d[attribute]}`);
             .text(d => `${d.Country}: ${d[attribute]}`);
 
         labels.transition().duration(speed)
             .attr("x", d => xScale(d[attribute]) + 5)
             .attr("y", d => yScale(d.Country) + yScale.bandwidth() / 2 + 5)
-            .text(d => `${d.Country}: ${d[attribute]}`);
             .text(d => `${d.Country}: ${d[attribute]}`);
 
         labels.exit().remove();
@@ -654,6 +643,7 @@ function createChart3(parseData) {
     // Initial call to update with the first date
     update(groupedData[0][0]);
 }
+
 
 
 function createChart4(parseData) {
