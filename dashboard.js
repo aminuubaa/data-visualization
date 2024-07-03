@@ -14,18 +14,13 @@
 
 // TODO: use descriptive names for variables
 let chart1, chart2, chart3, chart4;
-let country;
-let parsedata_backup;
 
 function initDashboard(parseData) {
-    width = 800
-    height = 600
-    parsedata_backup = parseData
+    width=800
+    height=600
     chart1 = d3.select("#chart1").append("svg")
         .attr("width", width)
         .attr("height", height)
-        .attr("viewBox", "0 0 800 600")
-        .attr("preserveAspectRatio", "xMidYMid meet")
         .call(d3.zoom().on("zoom", function (event) {
             chart1.attr("transform", event.transform);
         }))
@@ -46,10 +41,6 @@ function initDashboard(parseData) {
         .attr("height", height)
         .append("g");
 
-    console.log("pasring data", parseData)
-
-    createChart4("Deaths", parseData);
-    createChart3(parseData);
     createChart1(parseData);
     createChart2(parseData);
     createChart3(parseData);
@@ -98,7 +89,7 @@ function createChart1(parseData) {
     const countryDataMap = new Map(dataByCountry);
 
     const countries = Array.from(countryDataMap.keys());
-    const confirmedValues = countries.map(country => countryDataMap.get(country).deaths);
+    const confirmedValues = countries.map(country => countryDataMap.get(country).confirmed);
     const maxConfirmed = d3.max(confirmedValues);
     const minConfirmed = d3.min(confirmedValues);
 
@@ -157,33 +148,25 @@ function createChart1(parseData) {
 
                 // Highlight the clicked country path
                 d3.select(this)
-                    .attr("fill", "red")
-                    .transition()
-                    .duration(500)
-                    .attr("fill", "red");
-
-                country = d.properties.name;
-                createChart2(d.properties.name, parseData);
-                createChart4(d.properties.name, parseData);
-
+                    .attr("fill", "red"); // Example of selected effect: change fill color to red
             });
-        geojson.features.forEach(feature => {
-            const countryName = feature.properties.name;
-            const countryData = countryDataMap.get(countryName);
-            if (countryData && countryData.confirmed > 100000) {
-                const [cx, cy] = path.centroid(feature); // Get the centroid of the country path
-                const radius = Math.sqrt(countryData.confirmed) / 500; // Adjusted to make bubbles smaller
-
-                chart1.append("circle")
-                    .attr("cx", cx)
-                    .attr("cy", cy)
-                    .attr("r", 0)
-                    .style("fill", "rgba(255, 0, 0, 0.5)") // Adjust bubble color and opacity
-                    .transition()
-                    .duration(500)
-                    .attr("r", radius);
-            }
-        });
+            geojson.features.forEach(feature => {
+                const countryName = feature.properties.name;
+                const countryData = countryDataMap.get(countryName);
+                if (countryData && countryData.confirmed > 1000000) {
+                    const [cx, cy] = path.centroid(feature); // Get the centroid of the country path
+                    const radius = Math.sqrt(countryData.confirmed) / 500; // Adjusted to make bubbles smaller
+        
+                    chart1.append("circle")
+                        .attr("cx", cx)
+                        .attr("cy", cy)
+                        .attr("r", 0)
+                        .style("fill", "rgba(255, 0, 0, 0.5)") // Adjust bubble color and opacity
+                        .transition()
+                        .duration(500)
+                        .attr("r", radius);
+                }
+            });
         // Append a rectangle to act as background color
         chart1.append("rect")
             .attr("x", 0)
@@ -213,128 +196,93 @@ function createChart1(parseData) {
         });
 
         // Add legend to the legend container
-        // Create legend container
+// Create legend container
+const legendContainer = d3.select("#legend-container")
 
 
-        const legendContainer = d3.select("#legend-container")
-        const legend = legendContainer.append("svg")
-            .attr("width", 200)
-            .attr("height", 300);
-        const legendScale = d3.scaleLinear()
-            .domain([minConfirmed, maxConfirmed])
-            .range([180, 0]); // Invert range for vertical layout
+// Create SVG for legend
+const legend = legendContainer.append("svg")
+    .attr("width", 200)
+    .attr("height", countries.length * 20); // Adjust height based on number of items
 
-        // Create legend axis
-        const legendAxis = d3.axisRight(legendScale)
-            .ticks(5); // Adjust number of ticks as needed
+// Define legend scale
+const legendScale = d3.scaleLinear()
+    .domain([minConfirmed, maxConfirmed])
+    .range([180, 0]); // Invert range for vertical layout
 
-        // Append legend axis
-        legend.append("g")
-            .attr("transform", "translate(190, 10)") // Adjust position as needed
-            .call(legendAxis);
+// Create legend axis
+const legendAxis = d3.axisRight(legendScale)
+    .ticks(5); // Adjust number of ticks as needed
 
-        // Add legend label
-        legend.append("text")
-            .attr("x", 10)
-            .attr("y", 0)
-            .attr("dy", "-0.5em")
-            .text("Confirmed Cases");
+// Append legend axis
+legend.append("g")
+    .attr("transform", "translate(190, 10)") // Adjust position as needed
+    .call(legendAxis);
 
-        // Add color gradient to legend
-        const defs = legend.append("defs");
+// Add legend label
+legend.append("text")
+    .attr("x", 10)
+    .attr("y", 0)
+    .attr("dy", "-0.5em")
+    .text("Confirmed Cases");
 
-        const linearGradient = defs.append("linearGradient")
-            .attr("id", "linear-gradient")
-            .attr("x1", "0%")
-            .attr("y1", "0%")
-            .attr("x2", "0%")
-            .attr("y2", "100%");
+// Add color gradient to legend
+const defs = legend.append("defs");
 
-        linearGradient.selectAll("stop")
-            .data(colorScale.ticks().map((t, i, n) => ({
-                offset: `${100 * i / n.length}%`,
-                color: colorScale(t)
-            })))
-            .enter().append("stop")
-            .attr("offset", d => d.offset)
-            .attr("stop-color", d => d.color);
+const linearGradient = defs.append("linearGradient")
+    .attr("id", "linear-gradient")
+    .attr("x1", "0%")
+    .attr("y1", "0%")
+    .attr("x2", "0%")
+    .attr("y2", "100%");
 
-        legend.append("rect")
-            .attr("x", 10)
-            .attr("y", 10)
-            .attr("width", 10)
-            .attr("height", 180)
-            .style("fill", "url(#linear-gradient)");
+linearGradient.selectAll("stop")
+    .data(colorScale.ticks().map((t, i, n) => ({
+        offset: `${100 * i / n.length}%`,
+        color: colorScale(t)
+    })))
+    .enter().append("stop")
+    .attr("offset", d => d.offset)
+    .attr("stop-color", d => d.color);
 
-        // Adjust legend scale ticks
-        legend.append("g")
-            .attr("transform", "translate(20, 10)")
-            .call(legendAxis);
+legend.append("rect")
+    .attr("x", 10)
+    .attr("y", 10)
+    .attr("width", 10)
+    .attr("height", 180)
+    .style("fill", "url(#linear-gradient)");
+
+// Adjust legend scale ticks
+legend.append("g")
+    .attr("transform", "translate(20, 10)")
+    .call(legendAxis);
 
 
     });
 }
 
-function getCountryData(country, data) {
-
-    const parseDate = d3.timeParse("%m/%d/%Y");
-
-    // Filter data for the specified country
-    let filteredData = null;
-
-if (!country || country.length === 0) {
-    console.error("No data available for the selected country.", data);
-    filteredData = data;
-} else {
-    filteredData = data.filter(d => d.Country === country);
-}
-     
-
-    // Create an array to hold aggregated monthly data
-    const monthlyData = [];
-
-    // Group data by year first
-    const dataByYear = d3.group(filteredData, d => parseDate(d.Date).getFullYear());
-
-    // Iterate through each year's data
-    dataByYear.forEach((yearData, year) => {
-        // Group data by month within the current year
-        const dataByMonth = d3.group(yearData, d => parseDate(d.Date).getMonth());
-
-        // Iterate through each month within the current year
-        dataByMonth.forEach((monthData, month) => {
-            // Aggregate values for the current month in the current year
-            const aggregatedData = {
-                date: new Date(year, month, 1), // Use the 1st day of the month as the date
-                confirmed: d3.sum(monthData, d => +d.Confirmed),
-                deaths: d3.sum(monthData, d => +d.Deaths),
-                recovered: d3.sum(monthData, d => +d.Recovered),
-                active: d3.sum(monthData, d => +d.Active)
-            };
-
-            monthlyData.push(aggregatedData);
-        });
-    });
-
-    return monthlyData;
-}
-
-
-
-
-function createChart2(country, data) {
-
-    const countryData = getCountryData(country, data);
-
-   
-
-    console.log("countr data in the chart 2 function is", countryData)
+function createChart2(parseData) {
     const margin = { top: 50, right: 50, bottom: 100, left: 50 };
     const width = 700 - margin.left - margin.right;
     const height = 500 - margin.top - margin.bottom;
 
-    // Clear previous chart
-    chart2.selectAll("*").remove();
+    // Aggregate data by country
+    const aggregatedData = d3.rollups(
+        parseData,
+        v => ({
+            confirmed: d3.sum(v, d => d.Confirmed),
+            deaths: d3.sum(v, d => d.Deaths)
+        }),
+        d => d.Country
+    );
+
+    const xScale = d3.scaleLinear()
+        .domain([0, d3.max(aggregatedData, d => d[1].confirmed)])
+        .range([0, width]);
+
+    const yScale = d3.scaleLinear()
+        .domain([0, d3.max(aggregatedData, d => d[1].deaths)])
+        .range([height, 0]);
 
     const svg = chart2.append("svg")
         .attr("width", width + margin.left + margin.right)
@@ -342,112 +290,38 @@ function createChart2(country, data) {
         .append("g")
         .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-    // Extract the dates from your data
-    const dates = countryData.map(d => d.date);
-
-    const xScale = d3.scalePoint() // Using scalePoint for discrete dates
-        .domain(dates)
-        .range([0, width]);
-
-    const yScale = d3.scaleLinear()
-        .domain([0, d3.max(countryData, d => d.confirmed)])
-        .range([height, 0]);
-
-    const line = d3.line()
-        .x(d => xScale(d.date))
-        .y(d => yScale(d.confirmed));
-
-    svg.append("path")
-        .datum(countryData)
-        .attr("fill", "none")
-        .attr("stroke", "steelblue")
-        .attr("stroke-width", 1.5)
-        .attr("d", line);
-
-    // Add additional lines for deaths, recovered, and active cases
-    const lineDeaths = d3.line()
-        .x(d => xScale(d.date))
-        .y(d => yScale(d.deaths));
-
-    svg.append("path")
-        .datum(countryData)
-        .attr("fill", "none")
-        .attr("stroke", "red")
-        .attr("stroke-width", 1.5)
-        .attr("d", lineDeaths);
-
-    const lineRecovered = d3.line()
-        .x(d => xScale(d.date))
-        .y(d => yScale(d.recovered));
-
-    svg.append("path")
-        .datum(countryData)
-        .attr("fill", "none")
-        .attr("stroke", "green")
-        .attr("stroke-width", 1.5)
-        .attr("d", lineRecovered);
-
-    const lineActive = d3.line()
-        .x(d => xScale(d.date))
-        .y(d => yScale(d.active));
-
-    svg.append("path")
-        .datum(countryData)
-        .attr("fill", "none")
-        .attr("stroke", "orange")
-        .attr("stroke-width", 1.5)
-        .attr("d", lineActive);
-
-    // Add axes
+    svg.selectAll("circle")
+        .data(aggregatedData)
+        .enter()
+        .append("circle")
+        .attr("cx", d => xScale(d[1].confirmed))
+        .attr("cy", d => yScale(d[1].deaths))
+        .attr("r", 5)
+        .style("fill", "steelblue")
+        .append("title")
+        .text(d => `${d[0]}\nConfirmed: ${d[1].confirmed}\nDeaths: ${d[1].deaths}`);
     svg.append("g")
         .attr("transform", "translate(0," + height + ")")
-        .call(d3.axisBottom(xScale).tickFormat(d3.timeFormat("%Y-%m-%d"))); // Format the dates here
+        .call(d3.axisBottom(xScale))
+        .selectAll("text")
+        .attr("transform", "rotate(-45)")
+        .style("text-anchor", "end");
 
     svg.append("g")
         .call(d3.axisLeft(yScale));
 
-    // Add axis labels
-    svg.append("text")
+        svg.append("text")
         .attr("x", width / 2)
         .attr("y", height + margin.bottom - 50)
         .attr("text-anchor", "middle")
-        .text("Date");
+        .text("Confirmed Cases");
 
     svg.append("text")
         .attr("transform", "rotate(-90)")
         .attr("x", -height / 2)
         .attr("y", -margin.left + 15)
         .attr("text-anchor", "middle")
-        .text("Confirmed Cases");
-
-    // Add legend
-    const legendData = [
-        { name: "Confirmed", color: "steelblue" },
-        { name: "Deaths", color: "red" },
-        { name: "Recovered", color: "green" },
-        { name: "Active", color: "orange" }
-    ];
-
-    const legend = svg.append("g")
-        .attr("transform", `translate(${width - 100}, ${margin.top})`);
-
-    legend.selectAll("rect")
-        .data(legendData)
-        .enter()
-        .append("rect")
-        .attr("x", 0)
-        .attr("y", (d, i) => i * 20)
-        .attr("width", 10)
-        .attr("height", 10)
-        .attr("fill", d => d.color);
-
-    legend.selectAll("text")
-        .data(legendData)
-        .enter()
-        .append("text")
-        .attr("x", 20)
-        .attr("y", (d, i) => i * 20 + 10)
-        .text(d => d.name);
+        .text("Deaths");
 }
 
 
@@ -645,7 +519,6 @@ function createChart3(parseData) {
 }
 
 
-
 function createChart4(parseData) {
     const margin = { top: 50, right: 150, bottom: 50, left: 100 };
     const width = 460 - margin.left + margin.right;
@@ -778,17 +651,3 @@ function openPage(pageName, elmnt, color) {
     document.getElementById(pageName).style.display = "block";
     elmnt.style.backgroundColor = color;
 }
-
-
-document.addEventListener('DOMContentLoaded', function () {
-
-
-    document.querySelectorAll('input[name="data-type"]').forEach(radio => {
-        radio.addEventListener('change', function () {
-            const selectedMetric = this.value;
-            const selectedCountry = country
-            console.log("ccccc")
-            createChart4(selectedCountry, parsedata_backup);
-        });
-    });
-});
