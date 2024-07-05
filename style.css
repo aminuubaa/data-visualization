@@ -77,7 +77,7 @@ svg {
 .dashboardGrid {
     display: grid;
     grid-template-columns: auto auto;
-    grid-gap: 10px;
+    grid-gap: 50px;
 }
 
 .axis line,
@@ -162,7 +162,7 @@ div.tooltip {
     width: 200px; /* Adjust width as needed */
     height: 578px; /* Match height of the SVG canvas */
     overflow-y: auto; /* Enable vertical scrolling */
-    margin-left: 20px; /* Space between chart and legend */
+    margin-left: 5px; /* Space between chart and legend */
     background: #f9f9f9; /* Optional: background color for legend */
     padding: 10px; /* Optional: padding inside the legend container */
 }

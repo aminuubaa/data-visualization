@@ -16,6 +16,7 @@
 let chart1, chart2, chart3, chart4;
 let country;
 let parsedata_backup;
+let parseDataChart4;
 
 function initDashboard(parseData) {
     width = 800
@@ -32,7 +33,7 @@ function initDashboard(parseData) {
         .append("g");
 
     chart2 = d3.select("#chart2").append("svg")
-        .attr("width", width)
+        .attr("width", width+100)
         .attr("height", height)
         .append("g");
 
@@ -48,7 +49,9 @@ function initDashboard(parseData) {
 
     console.log("pasring data", parseData)
 
-    createChart4("Deaths", parseData);
+    parseDataChart4=parseData
+    // createChart4("Deaths", parseData);
+    createChart4("None", parseData);
     createChart3(parseData);
     createChart1(parseData);
     createChart2(null,parseData);
@@ -164,7 +167,7 @@ function createChart1(parseData) {
 
                 // Set the current selection
                 selectedCountryPath = this;
-
+                
                 // Highlight the clicked country path
                 d3.select(this)
                     .attr("fill", "red")
@@ -187,8 +190,8 @@ function createChart1(parseData) {
                 chart1.append("circle")
                     .attr("cx", cx)
                     .attr("cy", cy)
-                    .attr("r", 0)
-                    .style("fill", "rgba(255, 0, 0, 0.5)") // Adjust bubble color and opacity
+                    .attr("r", 0) 
+                    .style("fill", "#008001") // Adjust bubble color and opacity
                     .transition()
                     .duration(500)
                     .attr("r", radius);
@@ -228,7 +231,7 @@ function createChart1(parseData) {
 
         const legendContainer = d3.select("#legend-container")
         const legend = legendContainer.append("svg")
-            .attr("width", 200)
+            .attr("width", 100)
             .attr("height", 300);
         const legendScale = d3.scaleLinear()
             .domain([minConfirmed, maxConfirmed])
@@ -246,9 +249,9 @@ function createChart1(parseData) {
         // Add legend label
         legend.append("text")
             .attr("x", 10)
-            .attr("y", 0)
-            .attr("dy", "-0.5em")
-            .text("Confirmed Cases");
+            .attr("y", 15)
+            .attr("dy", "0.5em")
+            .text("Cases");
 
         // Add color gradient to legend
         const defs = legend.append("defs");
@@ -256,9 +259,9 @@ function createChart1(parseData) {
         const linearGradient = defs.append("linearGradient")
             .attr("id", "linear-gradient")
             .attr("x1", "0%")
-            .attr("y1", "0%")
+            .attr("y1", "100%")
             .attr("x2", "0%")
-            .attr("y2", "100%");
+            .attr("y2", "0%");
 
         linearGradient.selectAll("stop")
             .data(colorScale.ticks().map((t, i, n) => ({
@@ -271,14 +274,14 @@ function createChart1(parseData) {
 
         legend.append("rect")
             .attr("x", 10)
-            .attr("y", 10)
+            .attr("y", 50)
             .attr("width", 10)
             .attr("height", 180)
             .style("fill", "url(#linear-gradient)");
 
         // Adjust legend scale ticks
         legend.append("g")
-            .attr("transform", "translate(20, 10)")
+            .attr("transform", "translate(20, 50)")
             .call(legendAxis);
 
 
@@ -339,8 +342,8 @@ function createChart2(country, data) {
    
 
     console.log("countr data in the chart 2 function is", countryData)
-    const margin = { top: 50, right: 50, bottom: 100, left: 50 };
-    const width = 700 - margin.left - margin.right;
+    const margin = { top: 50, right: 50, bottom: 100, left: 100 };
+    const width = 900 - margin.left - margin.right;
     const height = 500 - margin.top - margin.bottom;
 
     // Clear previous chart
@@ -428,7 +431,7 @@ function createChart2(country, data) {
         .attr("x", -height / 2)
         .attr("y", -margin.left + 15)
         .attr("text-anchor", "middle")
-        .text("Confirmed Cases");
+        .text("Cases");
 
     // Add legend
     const legendData = [
@@ -439,7 +442,7 @@ function createChart2(country, data) {
     ];
 
     const legend = svg.append("g")
-        .attr("transform", `translate(${width - 100}, ${margin.top})`);
+        .attr("transform", `translate(${5}, ${margin.top-50})`);
 
     legend.selectAll("rect")
         .data(legendData)
@@ -614,8 +617,8 @@ function createChart3(parseData) {
         d3.select(`.stackedArea.${country.replace(/\s+/g, '')}`).style("opacity", 1);
         tooltip.transition().duration(200).style("opacity", .9);
         tooltip.html(country)
-            .style("left", (event.pageX + 5) + "px")
-            .style("top", (event.pageY - 28) + "px");
+        .style("left", (event.pageX + 5) + "px")
+        .style("top", (event.pageY - 28) + "px");
     }
 
     function hideTooltip() {
@@ -627,17 +630,14 @@ function createChart3(parseData) {
     //     const selectedData = parseData.filter(d => selectedCountries.has(d.Country));
     //     createChart4(selectedData);
     // }
-
     startRace();
 }
-
-
 
 
 function createChart4(selectedCountry, parseData) {
 
 
-    const margin = { top: 20, right: 30, bottom: 30, left: 40 };
+    const margin = { top: 20, right: 30, bottom: 30, left: 120 };
     const width = 700 - margin.left - margin.right;
     const height = 400 - margin.top - margin.bottom;
 
@@ -667,14 +667,17 @@ function createChart4(selectedCountry, parseData) {
         topCountries = Array.from(d3.rollup(
             parseData,
             v => d3.sum(v, d => +d[metric]),
+            // v => d3.sum(v, d => +d["None"]),
             d => d.Country
         )).sort((a, b) => b[1] - a[1]).slice(0, 5).map(d => d[0]);
+        console.log("selectedCountry === null", selectedCountry, topCountries)
     } else {
         topCountries = Array.from(new Set([...[selectedCountry], ...Array.from(d3.rollup(
             parseData,
             v => d3.sum(v, d => +d[metric]),
             d => d.Country
         )).sort((a, b) => b[1] - a[1]).slice(0, 5).map(d => d[0])]));
+        console.log("selectedCountry", selectedCountry, topCountries)
     }
 
     // Step 2: Aggregate data by month for top 5 countries
@@ -696,6 +699,7 @@ function createChart4(selectedCountry, parseData) {
         ...countryData
     }));
 
+    console.log("top countries", topCountries)
     const keys = topCountries;
 
     const x = d3.scaleBand()
@@ -742,7 +746,7 @@ function createChart4(selectedCountry, parseData) {
 
     // Add legend
     const legend = svg.append("g")
-        .attr("transform", `translate(${width - 100}, 0)`);
+        .attr("transform", `translate(${width}, 0)`);
 
     keys.forEach((key, i) => {
         const legendRow = legend.append("g")
@@ -789,14 +793,16 @@ function openPage(pageName, elmnt, color) {
 
 
 document.addEventListener('DOMContentLoaded', function () {
-
-
     document.querySelectorAll('input[name="data-type"]').forEach(radio => {
         radio.addEventListener('change', function () {
+            console.log("hello", radio.id, country)
             const selectedMetric = this.value;
             const selectedCountry = country
-            console.log("ccccc")
-            createChart4(selectedCountry, parsedata_backup);
+            if(!!selectedCountry){
+                createChart4(selectedCountry, parsedata_backup);
+            }else{
+                createChart4("None", parsedata_backup);
+            }
         });
     });
 });
