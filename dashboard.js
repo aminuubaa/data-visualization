@@ -1235,14 +1235,30 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
 function CreateWidgets(parsedData) {
-    // Aggregate the global totals
-    const globalTotal = parsedData.reduce((acc, data) => {
+    const groupedData = {};
+
+    parsedData.forEach(data => {
+        const country = data.Country;
+        if (!groupedData[country]) {
+            groupedData[country] = [];
+        }
+        groupedData[country].push(data);
+    });
+
+    const latestData = Object.values(groupedData).map(countryData => {
+        countryData.sort((a, b) => new Date(a.Date) - new Date(b.Date));
+        return countryData[countryData.length - 1];
+    });
+
+    const globalTotal = latestData.reduce((acc, data) => {
         acc.confirmed += parseInt(data.Confirmed) || 0;
         acc.active += parseInt(data.Active) || 0;
         acc.recovered += parseInt(data.Recovered) || 0;
         acc.deaths += parseInt(data.Deaths) || 0;
         return acc;
     }, { confirmed: 0, active: 0, recovered: 0, deaths: 0 });
+
+  
 
     // Logging the global totals to debug
     console.log('Global Total:', globalTotal);
