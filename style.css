@@ -145,23 +145,42 @@ div.tooltip {
     font-size: .7rem;
 }
 
+/*
 #chart-container {
     display: flex;
     justify-content: space-between;
 }
 
-/* #chart1 {
-  
+#chart1 {
+    flex: 1;
 }
 */
+#legend-container {
+    flex: 0 0 202px; /* Fixed width for the legend */
+}
 
 #legend-container {
     width: 200px; /* Adjust width as needed */
     height: 578px; /* Match height of the SVG canvas */
     overflow-y: auto; /* Enable vertical scrolling */
-    margin-left: 20px; /* Space between chart and legend */
+    margin-left: 5px; /* Space between chart and legend */
     background: #f9f9f9; /* Optional: background color for legend */
     padding: 10px; /* Optional: padding inside the legend container */
+}
+
+
+.tooltip {
+    position: absolute;
+    text-align: center;
+    width: auto;
+    height: auto;
+    padding: 5px;
+    font: 12px sans-serif;
+    background: lightsteelblue;
+    border: 0px;
+    border-radius: 8px;
+    pointer-events: none;
+    opacity: 0;
 }
 
 /* Styling for the selection boxes */
@@ -183,4 +202,37 @@ div.tooltip {
 .selection-container {
     display: flex;
     flex-direction: column;
+}
+
+
+/* Styling for widgets */
+.widget-container {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin: 20px 0;
+}
+.widget {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 10px;
+    text-align: center;
+    width: 200px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+.widget h2 {
+    margin: 0;
+    font-size: 2em;
+}
+.widget p {
+    margin: 5px 0;
+    color: #666;
+}
+
+.legend {
+    font-size: 14px;
+}
+.legend rect {
+    stroke-width: 2;
 }

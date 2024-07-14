@@ -11,6 +11,7 @@
 -->
 
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>Data Visualization Exercise</title>
@@ -29,113 +30,150 @@
     <script src="dataVis.js"></script>
     <!-- PART 2: include scripts for the dashboard -->
     <script src="dashboard.js"></script>
+    <link rel="stylesheet" href="style.css">
+
+
+    <style>
+        .tooltip {
+            position: absolute;
+            text-align: center;
+            padding: 8px;
+            background: lightsteelblue;
+            border: 1px solid #d3d3d3;
+            border-radius: 4px;
+            pointer-events: none;
+        }
+
+        #tooltip-info {
+            position: absolute;
+            background-color: white;
+            border: 1px solid #d3d3d3;
+            padding: 5px;
+            border-radius: 5px;
+            pointer-events: none;
+            visibility: hidden;
+        }
+
+        .line {
+            fill: none;
+            stroke-width: 2px;
+        }
+
+        .legend {
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+        }
+    </style>
 
 </head>
 
 <!-- call init function when page has loaded -->
+
 <body onload="init()">
 
-<h1>Data Visualization Exercise</h1>
+    <h1>Data Visualization Exercise</h1>
 
-<!-- credits -->
-<div id="credits">
-    Created by <span class="instructions">YOUR NAME</span>
-    for the Data Visualization Lecture at <a href="https://www.fim.uni-passau.de/digitale-bildverarbeitung"> Faculty of Computer
-    Science and Mathematics - Chair of Cognitive sensor systems - University of Passau</a>.
-</div>
-
-<!-- create buttons to select tabs -->
-<button class="tablink" onclick="openPage('DataLoading', this, 'blue')" id="defaultOpen" >Data Loading</button>
-<button class="tablink" onclick="openPage('BasicVisualization', this, 'blue')">Basic Visualization</button>
-<button class="tablink" onclick="openPage('Dashboard', this, 'blue')">Dashboard</button>
-
-<!-- Tab 1 -->
-<div id="DataLoading" class="tabcontent">
-
-    <!-- data selector -->
-    <p>Select your data here: <input id="upload" type="file"></p>
-
-    <!-- data table -->
-    <div id="dataTable"></div>
-
-</div>
-
-<!-- Tab 2 -->
-<div id="BasicVisualization" class="tabcontent">
-
-    <!-- scatterplot -->
-    <div class="container">
-        <!-- scatterplot menu -->
-        <h2>Scatterplot</h2>
-
-        <p>Select dimensions to be displayed here: </p>
-        <div id="menu">
-            <form action="#">
-                <fieldset>
-                    <label for="scatterX">x axis: </label>
-                    <select name="scatterX" id="scatterX">
-                    </select>
-                    <br/>
-                    <label for="scatterY">y axis: </label>
-                    <select name="scatterY" id="scatterY">
-                    </select>
-                    <br/>
-                    <label for="size">size: </label>
-                    <select name="size" id="size">
-                    </select>
-                </fieldset>
-            </form>
-        </div>
-        <!-- scatterplot SVG -->
-        <div id="sp"></div>
+    <!-- credits -->
+    <div id="credits">
+        Created by <span class="instructions">Aminu Uba & Safiullah Omar</span>
+        for the Data Visualization Lecture at <a href="https://www.fim.uni-passau.de/digitale-bildverarbeitung"> Faculty
+            of Computer
+            Science and Mathematics - Chair of Cognitive sensor systems - University of Passau</a>.
     </div>
 
-    <!-- radar chart -->
-    <div class="container">
-        <h2>Radar Chart</h2>
-        <!-- radar chart SVG -->
-        <div id="radar"></div>
-        <div id="legend">
-            <b>Legend:</b><br/>
-        </div>
+    <!-- create buttons to select tabs -->
+    <button class="tablink" onclick="openPage('DataLoading', this, 'blue')" id="defaultOpen">Data Loading</button>
+    <button class="tablink" onclick="openPage('BasicVisualization', this, 'blue')">Basic Visualization</button>
+    <button class="tablink" onclick="openPage('Dashboard', this, 'blue')">Dashboard</button>
+
+    <!-- Tab 1 -->
+    <div id="DataLoading" class="tabcontent">
+
+        <!-- data selector -->
+        <p>Select your data here: <input id="upload" type="file"></p>
+
+        <!-- data table -->
+        <div id="dataTable"></div>
+
     </div>
 
-</div>
+    <!-- Tab 2 -->
+    <div id="BasicVisualization" class="tabcontent">
 
-<!-- Tab 3 -->
-<div id="Dashboard" class="tabcontent">
-    <h1 align = "center">COVID-19 Dashboard</h1>
-
-    <!-- TODO: The environment of your dashboard can be freely customized. Here is a general layout to get you started. -->
-
-    <!-- Grid container -->
-    <div class="dashboardGrid">
-
-        <!-- chart 1 (Map) -->
+        <!-- scatterplot -->
         <div class="container">
-            <h2>Choropleth Map</h2>
-            <h4>COVID-19 Cases by Country</h4>
-            <div class="selection-box" id="map-selection">
-                <label for="map-country">Select Country:</label>
-                <select id="map-country">
-                    <option value="All">All</option>
-                    <!-- Country options will be populated dynamically -->
-                </select>
+            <!-- scatterplot menu -->
+            <h2>Scatterplot</h2>
+
+            <p>Select dimensions to be displayed here: </p>
+            <div id="menu">
+                <form action="#">
+                    <fieldset>
+                        <label for="scatterX">x axis: </label>
+                        <select name="scatterX" id="scatterX">
+                        </select>
+                        <br />
+                        <label for="scatterY">y axis: </label>
+                        <select name="scatterY" id="scatterY">
+                        </select>
+                        <br />
+                        <label for="size">size: </label>
+                        <select name="size" id="size">
+                        </select>
+                    </fieldset>
+                </form>
             </div>
-            <div id="chart1"></div>
+            <!-- scatterplot SVG -->
+            <div id="sp"></div>
         </div>
 
-        <!-- chart 2 (Scatter Plot) -->
+        <!-- radar chart -->
         <div class="container">
-            <h2>Line Chart</h2>
-            <h4>COVID-19 Trends Over Time</h4>
-            <div id="chart2"></div>
+            <h2>Radar Chart</h2>
+            <!-- radar chart SVG -->
+            <div id="radar"></div>
+            <div id="legend">
+                <b>Legend:</b><br />
+            </div>
         </div>
 
-        <!-- chart 3 (Race Bar Chart) -->
+    </div>
+
+    <!-- Tab 3 -->
+    <div id="Dashboard" class="tabcontent">
+
+        <h1 align = "center">Tracking Pandemic: An Overview of Covid-19’s Global Impact through Data Visualization</h1>
+        <div class="widget-container" id="widgets"></div>
+
+        <!-- TODO: The environment of your dashboard can be freely customized. Here is a general layout to get you started. -->
+
+        <!-- Grid container -->
+        <div class="dashboardGrid">
+
+            <!-- chart 1 -->
+            <div class="container">
+                <h2>Global Spread of Covid-19</h2>
+                <div id="chart-container" style="display: flex;">
+                    <div id="chart1"></div>
+                    <div id="legend-container" style="margin-left: 20px;"></div>
+                </div>
+            </div>
+
+            <!-- chart 2 -->
+            <div class="container">
+                <h2>Temporal Trends of Covid-19</h2> <span id="spnChart2"></span>
+                <!-- radar chart SVG -->
+                <!-- <div id="chart2"></div> -->
+
+                <div id="chart5"></div>
+                <span id="tooltip-info"></span>
+
+
+            </div>
+
+             <!-- chart 3 (Race Bar Chart) -->
         <div class="container">
-            <h2>Race Bar Chart</h2>
-            <h4>Dynamic COVID-19 Data</h4>
+            <h2>Countries Comparisons Over Time</h2>
             <div class="selection-box" id="race-bar-selection">
                 <label for="race-bar-category">Select Attribute:</label>
                 <select id="race-bar-category">
@@ -155,16 +193,28 @@
             
         </div>
 
-        <!-- chart 4 (Line Chart) -->
-        <div class="container">
-            <h2>Stacked Area Chart</h2>
-            <h4>Trends based on countries</h4>
-            <div id="chart4"></div>
-        </div>
-    </div>
+            <!-- chart 4 -->
+            <div class="container">
+                <h2>Breakdown of Cases by Severity</h2>
+                <div id="radio-buttons" style="margin-bottom: 20px;">
+                    <input type="radio" id="death" name="data-type" value="Deaths" checked>
+                    <label for="death">Deaths</label>
+                    <input type="radio" id="active" name="data-type" value="Active">
+                    <label for="active">Active</label>
+                    <input type="radio" id="confirmed" name="data-type" value="Confirmed">
+                    <label for="confirmed">Confirmed</label>
+                </div>
+                <!-- radar chart SVG -->
+                <div id="chart4"></div>
+            </div>
 
-</div>
+        
+
+        </div>
+
+    </div>
 
 
 </body>
+
 </html>
