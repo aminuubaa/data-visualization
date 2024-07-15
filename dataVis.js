@@ -151,8 +151,10 @@
     
         let columns = Object.keys(data[0]);
         thead.append("tr").selectAll("th").data(columns).enter().append("th").text(d => d);
-    
-        let rows = tbody.selectAll("tr").data(data).enter().append("tr");
+        
+        let slicedData = data.slice(0, 100);
+
+        let rows = tbody.selectAll("tr").data(slicedData).enter().append("tr");
         rows.selectAll("td").data(row => columns.map(column => ({ column, value: row[column] })))
             .enter().append("td").text(d => d.value);
     

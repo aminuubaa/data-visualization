@@ -88,19 +88,34 @@ function createChart1(parseData) {
 
     let selectedCountryPath = null; // Track the currently selected country path
 
-    // Aggregate data by country
-    const dataByCountry = d3.rollups(
-        parseData,
-        v => ({
-            confirmed: d3.sum(v, d => d.Confirmed),
-            deaths: d3.sum(v, d => d.Deaths),
-            recovered: d3.sum(v, d => d.Recovered),
-            active: d3.sum(v, d => d.Active)
-        }),
-        d => d.Country
-    );
 
-    const countryDataMap = new Map(dataByCountry);
+    const groupedData = d3.group(parseData, d => d.Country);
+    const latestData = Array.from(groupedData.values()).map(countryData => {
+        countryData.sort((a, b) => new Date(a.Date) - new Date(b.Date));
+        return countryData[countryData.length - 1];
+    });
+
+    const countryDataMap = new Map(latestData.map(d => [d.Country, {
+        confirmed: +d.Confirmed,
+        deaths: +d.Deaths,
+        recovered: +d.Recovered,
+        active: +d.Active
+    }]));
+
+
+    // Aggregate data by country
+    // const dataByCountry = d3.rollups(
+    //     parseData,
+    //     v => ({
+    //         confirmed: d3.sum(v, d => d.Confirmed),
+    //         deaths: d3.sum(v, d => d.Deaths),
+    //         recovered: d3.sum(v, d => d.Recovered),
+    //         active: d3.sum(v, d => d.Active)
+    //     }),
+    //     d => d.Country
+    // );
+
+    //const countryDataMap = new Map(dataByCountry);
 
     const countries = Array.from(countryDataMap.keys());
     const confirmedValues = countries.map(country => countryDataMap.get(country).deaths);
@@ -178,12 +193,12 @@ function createChart1(parseData) {
             const countryData = countryDataMap.get(countryName);
             if (countryData && countryData.confirmed > 100000) {
                 const [cx, cy] = path.centroid(feature); // Get the centroid of the country path
-                const radius = Math.sqrt(countryData.confirmed) / 500; // Adjusted to make bubbles smaller
+                const radius = Math.sqrt(countryData.confirmed) / 80; // Adjusted to make bubbles smaller
 
                 chart1.append("circle")
                     .attr("cx", cx)
                     .attr("cy", cy)
-                    .attr("r", 0)
+                    .attr("r", 10)
                     .style("fill", "#008001") // Adjust bubble color and opacity
                     .transition()
                     .duration(500)

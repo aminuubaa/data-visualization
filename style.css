@@ -71,9 +71,16 @@ svg {
     vertical-align: top;
     height: 100%;
     padding: 10px;
-    border: 0px solid black;
+    border: 1cap solid black;
 }
 
+.container1 {
+    display: table-cell;
+    vertical-align: top;
+    height: 100%;
+    padding: 10px;
+    border: 1cap solid black;
+}
 .dashboardGrid {
     display: grid;
     grid-template-columns: auto auto;
